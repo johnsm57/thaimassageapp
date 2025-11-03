@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 
 const { width } = Dimensions.get('window');
 
@@ -21,7 +22,27 @@ const Login = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Configure Google Sign-In
+  useEffect(() => {
+    const configureGoogleSignIn = async () => {
+      try {
+        await GoogleSignin.configure({
+          webClientId: '460156669437-aruvatddasgqkng7v7se6c7nrfit3f5q.apps.googleusercontent.com',
+          offlineAccess: true,
+          hostedDomain: '',
+          forceCodeForRefreshToken: true,
+        });
+        console.log('Google Sign-In configured successfully');
+      } catch (error) {
+        console.error('Google Sign-In configuration error:', error);
+      }
+    };
+
+    configureGoogleSignIn();
+  }, []);
 
   // Validate email format
   const isValidEmail = (email) => {
@@ -40,6 +61,14 @@ const Login = ({ navigation }) => {
       if (userDoc.exists) {
         const userData = userDoc.data();
         
+        // Add safety check for userData
+        if (!userData) {
+          console.log('User document exists but data is undefined');
+          return { complete: false, needsLocation: false, needsProfile: true };
+        }
+        
+        console.log('User profile data:', userData);
+        
         // Check if profile is complete
         if (userData.name && userData.gender && userData.location) {
           return { complete: true, needsLocation: false, needsProfile: false };
@@ -50,6 +79,7 @@ const Login = ({ navigation }) => {
         }
       } else {
         // No profile exists, needs to complete profile
+        console.log('User document does not exist');
         return { complete: false, needsLocation: false, needsProfile: true };
       }
     } catch (error) {
@@ -114,7 +144,119 @@ const Login = ({ navigation }) => {
     }
   };
 
-  // Handle login
+  // Google Sign-In function
+  const signInWithGoogle = async () => {
+    try {
+      setGoogleLoading(true);
+      setErrorMessage('');
+
+      console.log('Starting Google Sign-In process...');
+
+      // Check if device supports Google Play
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      console.log('Play Services available');
+      
+      // Get the user's ID token
+      const signInResult = await GoogleSignin.signIn();
+      console.log('Google Sign-In result:', signInResult);
+      
+      // Handle the new response structure {type: 'success', data: {...}}
+      let idToken, user;
+      
+      if (signInResult.type === 'success') {
+        // New format: {type: 'success', data: {idToken, user}}
+        idToken = signInResult.data?.idToken;
+        user = signInResult.data?.user;
+        console.log('Using new response format');
+      } else if (signInResult.idToken) {
+        // Old format: {idToken, user}
+        idToken = signInResult.idToken;
+        user = signInResult.user;
+        console.log('Using old response format');
+      }
+      
+      // Check if we got the required data
+      if (!idToken) {
+        console.error('Sign-In result structure:', JSON.stringify(signInResult));
+        throw new Error('Failed to get user credentials from Google Sign-In');
+      }
+      
+      console.log('Got ID token and user data');
+      
+      // Create a Google credential with the token
+      const googleCredential = auth.GoogleAuthProvider.credential(idToken);
+      
+      // Sign-in the user with the credential
+      const userCredential = await auth().signInWithCredential(googleCredential);
+      
+      console.log('Firebase authentication successful:', userCredential.user);
+      
+      // Check profile completion and navigate accordingly
+      const profileStatus = await checkUserProfile(userCredential.user.uid);
+
+      if (profileStatus.complete) {
+        // Profile is complete, navigate to Home
+        navigation.navigate('home');
+      } else if (profileStatus.needsProfile) {
+        // Needs to complete profile
+        navigation.navigate('home');
+      } else if (profileStatus.needsLocation) {
+        // Needs to complete location
+        navigation.navigate('location');
+      }
+      
+    } catch (error) {
+      console.error('Google Sign-In Error:', error);
+      
+      let errorMessage = 'Google Sign-In failed. Please try again.';
+      
+      // Check if error exists and has a code property
+      if (error && typeof error === 'object') {
+        if (error.code) {
+          switch (error.code) {
+            case statusCodes.SIGN_IN_CANCELLED:
+              errorMessage = 'Sign-in was cancelled by user.';
+              break;
+            case statusCodes.IN_PROGRESS:
+              errorMessage = 'Sign-in is already in progress.';
+              break;
+            case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
+              errorMessage = 'Google Play Services not available or outdated.';
+              break;
+            case 'auth/account-exists-with-different-credential':
+              errorMessage = 'An account already exists with a different sign-in method.';
+              break;
+            case 'auth/invalid-credential':
+              errorMessage = 'Invalid credentials. Please try again.';
+              break;
+            case 'auth/network-request-failed':
+              errorMessage = 'Network error. Please check your internet connection.';
+              break;
+            case 'auth/user-disabled':
+              errorMessage = 'This account has been disabled. Please contact support.';
+              break;
+            case 'auth/operation-not-allowed':
+              errorMessage = 'Google Sign-In is not enabled. Please contact support.';
+              break;
+            default:
+              errorMessage = error.message || 'Google Sign-In failed. Please try again.';
+          }
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+      }
+      
+      // Only set error message if sign-in wasn't cancelled
+      if (error?.code !== statusCodes.SIGN_IN_CANCELLED) {
+        setErrorMessage(errorMessage);
+      }
+      
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  // Handle login with email/password
   const handleLogin = async () => {
     // Clear previous error
     setErrorMessage('');
@@ -166,6 +308,11 @@ const Login = ({ navigation }) => {
     }
   };
 
+  // Handle Google Login
+  const handleGoogleLogin = async () => {
+    await signInWithGoogle();
+  };
+
   // Handle forgot password
   const handleForgotPassword = async () => {
     if (!email.trim()) {
@@ -208,7 +355,7 @@ const Login = ({ navigation }) => {
             style={styles.backButton}
             onPress={() => navigation.goBack()}
             activeOpacity={0.7}
-            disabled={loading}
+            disabled={loading || googleLoading}
           >
             <View style={styles.backButtonContainer}>
               {/* Arrow with background circle */}
@@ -248,7 +395,7 @@ const Login = ({ navigation }) => {
               }}
               keyboardType="email-address"
               autoCapitalize="none"
-              editable={!loading}
+              editable={!loading && !googleLoading}
             />
           </View>
 
@@ -265,12 +412,12 @@ const Login = ({ navigation }) => {
               }}
               secureTextEntry={!showPassword}
               autoCapitalize="none"
-              editable={!loading}
+              editable={!loading && !googleLoading}
             />
             <TouchableOpacity 
               style={styles.eyeButton}
               onPress={() => setShowPassword(!showPassword)}
-              disabled={loading}
+              disabled={loading || googleLoading}
             >
               <View style={styles.eyeIcon}>
                 <Text style={styles.eyeText}>👁</Text>
@@ -283,7 +430,7 @@ const Login = ({ navigation }) => {
             <TouchableOpacity 
               activeOpacity={0.7}
               onPress={handleForgotPassword}
-              disabled={loading}
+              disabled={loading || googleLoading}
             >
               <Text style={styles.forgotPasswordText}>forgot password?</Text>
             </TouchableOpacity>
@@ -291,10 +438,10 @@ const Login = ({ navigation }) => {
 
           {/* Login Button */}
           <TouchableOpacity 
-            style={[styles.loginButton, loading && styles.loginButtonDisabled]}
+            style={[styles.loginButton, (loading || googleLoading) && styles.loginButtonDisabled]}
             activeOpacity={0.8}
             onPress={handleLogin}
-            disabled={loading}
+            disabled={loading || googleLoading}
           >
             {loading ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
@@ -310,23 +457,29 @@ const Login = ({ navigation }) => {
 
           {/* Google Button */}
           <TouchableOpacity 
-            style={[styles.googleButton, loading && styles.googleButtonDisabled]}
+            style={[styles.googleButton, (loading || googleLoading) && styles.googleButtonDisabled]}
             activeOpacity={0.7}
-            disabled={loading}
+            onPress={handleGoogleLogin}
+            disabled={loading || googleLoading}
           >
             <View style={styles.googleButtonContent}>
-              {/* Google Icon */}
-              <View style={styles.googleIcon}>
-                <View style={styles.googleIconContainer}>
-                  <Text style={styles.googleBlue}>G</Text>
-                  <Text style={styles.googleRed}>o</Text>
-                  <Text style={styles.googleYellow}>o</Text>
-                  <Text style={styles.googleBlue}>g</Text>
-                  <Text style={styles.googleGreen}>l</Text>
-                  <Text style={styles.googleRed}>e</Text>
+              {googleLoading ? (
+                <ActivityIndicator size="small" color="#5D4A5D" style={{ marginRight: 12 }} />
+              ) : (
+                <View style={styles.googleIcon}>
+                  <View style={styles.googleIconContainer}>
+                    <Text style={styles.googleBlue}>G</Text>
+                    <Text style={styles.googleRed}>o</Text>
+                    <Text style={styles.googleYellow}>o</Text>
+                    <Text style={styles.googleBlue}>g</Text>
+                    <Text style={styles.googleGreen}>l</Text>
+                    <Text style={styles.googleRed}>e</Text>
+                  </View>
                 </View>
-              </View>
-              <Text style={styles.googleButtonText}>Log in with google</Text>
+              )}
+              <Text style={styles.googleButtonText}>
+                {googleLoading ? 'Logging in...' : 'Log in with google'}
+              </Text>
             </View>
           </TouchableOpacity>
         </View>

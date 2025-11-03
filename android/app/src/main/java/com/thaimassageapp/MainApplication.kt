@@ -6,6 +6,8 @@ import com.facebook.react.ReactApplication
 import com.facebook.react.ReactHost
 import com.facebook.react.ReactNativeApplicationEntryPoint.loadReactNative
 import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
+import com.google.android.gms.common.GooglePlayServicesUtil
+import com.google.android.gms.security.ProviderInstaller
 
 class MainApplication : Application(), ReactApplication {
 
@@ -23,5 +25,13 @@ class MainApplication : Application(), ReactApplication {
   override fun onCreate() {
     super.onCreate()
     loadReactNative(this)
+    
+    // Initialize Google Play Services for Google Sign-In
+    try {
+      ProviderInstaller.installIfNeeded(this)
+    } catch (e: Exception) {
+      // Handle exception - Google Play Services may not be available
+      e.printStackTrace()
+    }
   }
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import auth from '@react-native-firebase/auth';
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 
 const { width } = Dimensions.get('window');
 
@@ -20,7 +21,27 @@ const Signup = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Configure Google Sign-In with better error handling
+  useEffect(() => {
+    const configureGoogleSignIn = async () => {
+      try {
+        await GoogleSignin.configure({
+          webClientId: '460156669437-aruvatddasgqkng7v7se6c7nrfit3f5q.apps.googleusercontent.com',
+          offlineAccess: true,
+          hostedDomain: '',
+          forceCodeForRefreshToken: true,
+        });
+        console.log('Google Sign-In configured successfully');
+      } catch (error) {
+        console.error('Google Sign-In configuration error:', error);
+      }
+    };
+
+    configureGoogleSignIn();
+  }, []);
 
   // Validate email format
   const isValidEmail = (email) => {
@@ -31,9 +52,7 @@ const Signup = ({ navigation }) => {
   // Firebase create user account function
   const createUserAccount = async (email, password) => {
     try {
-      // Create user with email and password
       const userCredential = await auth().createUserWithEmailAndPassword(email, password);
-      
       const user = userCredential.user;
       
       console.log('User account created successfully:', user.uid);
@@ -53,46 +72,151 @@ const Signup = ({ navigation }) => {
     } catch (error) {
       console.error('Error creating user account:', error);
       
-      // Handle specific Firebase Auth errors
       let errorMessage = 'An error occurred while creating your account.';
       
-      switch (error.code) {
-        case 'auth/email-already-in-use':
-          errorMessage = 'This email address is already registered. Please use a different email or try signing in.';
-          break;
-        case 'auth/invalid-email':
-          errorMessage = 'Please enter a valid email address.';
-          break;
-        case 'auth/operation-not-allowed':
-          errorMessage = 'Email/password accounts are not enabled. Please contact support.';
-          break;
-        case 'auth/weak-password':
-          errorMessage = 'Password is too weak. Please choose a stronger password.';
-          break;
-        case 'auth/network-request-failed':
-          errorMessage = 'Network error. Please check your internet connection and try again.';
-          break;
-        case 'auth/too-many-requests':
-          errorMessage = 'Too many failed attempts. Please try again later.';
-          break;
-        default:
-          errorMessage = error.message || 'An unexpected error occurred.';
+      if (error && error.code) {
+        switch (error.code) {
+          case 'auth/email-already-in-use':
+            errorMessage = 'This email address is already registered. Please use a different email or try signing in.';
+            break;
+          case 'auth/invalid-email':
+            errorMessage = 'Please enter a valid email address.';
+            break;
+          case 'auth/operation-not-allowed':
+            errorMessage = 'Email/password accounts are not enabled. Please contact support.';
+            break;
+          case 'auth/weak-password':
+            errorMessage = 'Password is too weak. Please choose a stronger password.';
+            break;
+          case 'auth/network-request-failed':
+            errorMessage = 'Network error. Please check your internet connection and try again.';
+            break;
+          case 'auth/too-many-requests':
+            errorMessage = 'Too many failed attempts. Please try again later.';
+            break;
+          default:
+            errorMessage = error.message || 'An unexpected error occurred.';
+        }
+      } else if (error && error.message) {
+        errorMessage = error.message;
       }
       
       return {
         success: false,
         error: errorMessage,
-        code: error.code
+        code: error?.code || 'unknown'
       };
     }
   };
 
-  // Handle create account
+  // Google Sign-In function with FIXED error handling
+  const signInWithGoogle = async () => {
+    try {
+      setGoogleLoading(true);
+      setErrorMessage('');
+
+      console.log('Starting Google Sign-In process...');
+
+      // Check if your device supports Google Play
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      console.log('Play Services available');
+      
+      // Get the users ID token
+      const signInResult = await GoogleSignin.signIn();
+      console.log('Google Sign-In result:', signInResult);
+      
+      // FIXED: Handle the new response structure {type: 'success', data: {...}}
+      let idToken, user;
+      
+      if (signInResult.type === 'success') {
+        // New format: {type: 'success', data: {idToken, user}}
+        idToken = signInResult.data?.idToken;
+        user = signInResult.data?.user;
+        console.log('Using new response format');
+      } else if (signInResult.idToken) {
+        // Old format: {idToken, user}
+        idToken = signInResult.idToken;
+        user = signInResult.user;
+        console.log('Using old response format');
+      }
+      
+      // Check if we got the required data
+      if (!idToken) {
+        console.error('Sign-In result structure:', JSON.stringify(signInResult));
+        throw new Error('Failed to get user credentials from Google Sign-In');
+      }
+      
+      console.log('Got ID token and user data');
+      
+      // Create a Google credential with the token
+      const googleCredential = auth.GoogleAuthProvider.credential(idToken);
+      
+      // Sign-in the user with the credential
+      const userCredential = await auth().signInWithCredential(googleCredential);
+      
+      console.log('Firebase authentication successful:', userCredential.user);
+      
+      // Navigate to OTP screen or wherever you want
+      navigation.navigate('home');
+      
+    } catch (error) {
+      console.error('Google Sign-In Error:', error);
+      
+      let errorMessage = 'Google Sign-In failed. Please try again.';
+      
+      // Check if error exists and has a code property
+      if (error && typeof error === 'object') {
+        if (error.code) {
+          switch (error.code) {
+            case statusCodes.SIGN_IN_CANCELLED:
+              errorMessage = 'Sign-in was cancelled by user.';
+              break;
+            case statusCodes.IN_PROGRESS:
+              errorMessage = 'Sign-in is already in progress.';
+              break;
+            case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
+              errorMessage = 'Google Play Services not available or outdated.';
+              break;
+            case 'auth/account-exists-with-different-credential':
+              errorMessage = 'An account already exists with a different sign-in method.';
+              break;
+            case 'auth/invalid-credential':
+              errorMessage = 'Invalid credentials. Please try again.';
+              break;
+            case 'auth/network-request-failed':
+              errorMessage = 'Network error. Please check your internet connection.';
+              break;
+            case 'auth/user-disabled':
+              errorMessage = 'This account has been disabled. Please contact support.';
+              break;
+            case 'auth/operation-not-allowed':
+              errorMessage = 'Google Sign-In is not enabled. Please contact support.';
+              break;
+            case 'auth/configuration-not-found':
+              errorMessage = 'Google Sign-In configuration not found. Please contact support.';
+              break;
+            default:
+              errorMessage = error.message || 'Google Sign-In failed. Please try again.';
+          }
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+      }
+      
+      // Only set error message if sign-in wasn't cancelled
+      if (error?.code !== statusCodes.SIGN_IN_CANCELLED) {
+        setErrorMessage(errorMessage);
+      }
+      
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  // Handle create account with email/password
   const handleCreateAccount = async () => {
-    // Clear previous error
     setErrorMessage('');
 
-    // Validate inputs
     if (!email.trim()) {
       setErrorMessage('Please enter your email address');
       return;
@@ -119,10 +243,8 @@ const Signup = ({ navigation }) => {
       const result = await createUserAccount(email.trim(), password);
 
       if (result.success) {
-        // Account created successfully - Navigate directly to OTP screen
-        navigation.navigate('otp'); // Update with your actual OTP screen route name
+        navigation.navigate('otp');
       } else {
-        // Show error message
         setErrorMessage(result.error);
       }
     } catch (error) {
@@ -133,11 +255,13 @@ const Signup = ({ navigation }) => {
     }
   };
 
-  // Handle Google Sign Up (you can implement this later)
+  // Handle Google Sign Up
   const handleGoogleSignUp = async () => {
-    Alert.alert('Info', 'Google Sign Up will be implemented soon!');
+    await signInWithGoogle();
   };
 
+  // FIXED Debug function
+  
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#EDE2E0" />
@@ -183,11 +307,11 @@ const Signup = ({ navigation }) => {
               value={email}
               onChangeText={(text) => {
                 setEmail(text);
-                if (errorMessage) setErrorMessage(''); // Clear error on input
+                if (errorMessage) setErrorMessage('');
               }}
               keyboardType="email-address"
               autoCapitalize="none"
-              editable={!loading}
+              editable={!loading && !googleLoading}
             />
           </View>
 
@@ -200,16 +324,16 @@ const Signup = ({ navigation }) => {
               value={password}
               onChangeText={(text) => {
                 setPassword(text);
-                if (errorMessage) setErrorMessage(''); // Clear error on input
+                if (errorMessage) setErrorMessage('');
               }}
               secureTextEntry={!showPassword}
               autoCapitalize="none"
-              editable={!loading}
+              editable={!loading && !googleLoading}
             />
             <TouchableOpacity 
               style={styles.eyeButton}
               onPress={() => setShowPassword(!showPassword)}
-              disabled={loading}
+              disabled={loading || googleLoading}
             >
               <View style={styles.eyeIcon}>
                 <Text style={styles.eyeText}>👁</Text>
@@ -219,10 +343,10 @@ const Signup = ({ navigation }) => {
 
           {/* Create Account Button */}
           <TouchableOpacity 
-            style={[styles.createButton, loading && styles.createButtonDisabled]}
+            style={[styles.createButton, (loading || googleLoading) && styles.createButtonDisabled]}
             activeOpacity={0.8}
             onPress={handleCreateAccount}
-            disabled={loading}
+            disabled={loading || googleLoading}
           >
             {loading ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
@@ -238,25 +362,33 @@ const Signup = ({ navigation }) => {
 
           {/* Google Button */}
           <TouchableOpacity 
-            style={[styles.googleButton, loading && styles.googleButtonDisabled]}
+            style={[styles.googleButton, (loading || googleLoading) && styles.googleButtonDisabled]}
             activeOpacity={0.7}
-            disabled={loading}
+            disabled={loading || googleLoading}
             onPress={handleGoogleSignUp}
           >
             <View style={styles.googleButtonContent}>
-              <View style={styles.googleIcon}>
-                <View style={styles.googleIconContainer}>
-                  <Text style={styles.googleBlue}>G</Text>
-                  <Text style={styles.googleRed}>o</Text>
-                  <Text style={styles.googleYellow}>o</Text>
-                  <Text style={styles.googleBlue}>g</Text>
-                  <Text style={styles.googleGreen}>l</Text>
-                  <Text style={styles.googleRed}>e</Text>
+              {googleLoading ? (
+                <ActivityIndicator size="small" color="#5D4A5D" style={{ marginRight: 12 }} />
+              ) : (
+                <View style={styles.googleIcon}>
+                  <View style={styles.googleIconContainer}>
+                    <Text style={styles.googleBlue}>G</Text>
+                    <Text style={styles.googleRed}>o</Text>
+                    <Text style={styles.googleYellow}>o</Text>
+                    <Text style={styles.googleBlue}>g</Text>
+                    <Text style={styles.googleGreen}>l</Text>
+                    <Text style={styles.googleRed}>e</Text>
+                  </View>
                 </View>
-              </View>
-              <Text style={styles.googleButtonText}>create account with google</Text>
+              )}
+              <Text style={styles.googleButtonText}>
+                {googleLoading ? 'Signing in...' : 'create account with google'}
+              </Text>
             </View>
           </TouchableOpacity>
+
+         
         </View>
       </ScrollView>
     </View>
@@ -471,6 +603,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#5D4A5D',
     fontWeight: '500',
+  },
+  // Debug button styles (remove in production)
+  debugButton: {
+    marginTop: 20,
+    padding: 10,
+    backgroundColor: '#333',
+    borderRadius: 5,
+  },
+  debugButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    textAlign: 'center',
   },
 });
 

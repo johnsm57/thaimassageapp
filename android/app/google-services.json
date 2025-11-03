@@ -12,7 +12,12 @@
           "package_name": "com.thaiapp"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "460156669437-aruvatddasgqkng7v7se6c7nrfit3f5q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBvdI-0HhV06qSM7EdnnvOtB-6CXkDuoyk"
@@ -20,7 +25,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "460156669437-aruvatddasgqkng7v7se6c7nrfit3f5q.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     },
@@ -31,7 +41,12 @@
           "package_name": "com.thaimassageapp"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "460156669437-aruvatddasgqkng7v7se6c7nrfit3f5q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBvdI-0HhV06qSM7EdnnvOtB-6CXkDuoyk"
@@ -39,7 +54,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "460156669437-aruvatddasgqkng7v7se6c7nrfit3f5q.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
