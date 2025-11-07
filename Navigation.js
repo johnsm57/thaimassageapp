@@ -11,6 +11,9 @@ import ProfileScreen from './src/authentication/register/ProfileScreen';
 import LocationScreen from './src/authentication/register/LocationScreen';
 import Homescreen from './src/Home/Homescreen';
 import Setting from './src/setting/setting';
+import chat from './src/chat/Chat';
+import MessagesScreen from './src/chat/MessagesScreen';
+import NotificationsScreen from './src/notification/NotificationsScreen';
 const Stack = createNativeStackNavigator();
 
 export default function Navigation() {
@@ -26,6 +29,9 @@ export default function Navigation() {
         <Stack.Screen name="location" component={LocationScreen} />
         <Stack.Screen name="Home" component={Homescreen} />
         <Stack.Screen name="setting" component={Setting} />
+        <Stack.Screen name="chat" component={chat} />
+        <Stack.Screen name="massage" component={MessagesScreen}/>
+        <Stack.Screen name="notifications" component={NotificationsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

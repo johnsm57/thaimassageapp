@@ -180,7 +180,9 @@ const Homescreeen = ({ navigation }) => {
       <StatusBar barStyle="dark-content" backgroundColor="#EDE2E0" />
       <View style={styles.header}>
         <View style={styles.userBadge}><Text style={styles.userName}>👋🏼 Luci</Text></View>
-        <TouchableOpacity style={styles.notificationButton}><Icon name="bell-outline" size={22} color="#D96073" /></TouchableOpacity>
+        <TouchableOpacity style={styles.notificationButton}><Icon name="bell-outline" size={22} color="#D96073" 
+        onPress={() => navigation.navigate('notifications')}
+        /></TouchableOpacity>
       </View>
 
       {showNotification && (

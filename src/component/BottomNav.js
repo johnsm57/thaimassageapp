@@ -29,7 +29,7 @@ const BottomNav = ({ navigation, active = 'home', bottomOffset = 18, fixedBottom
         <TouchableOpacity
           style={styles.navItem}
           activeOpacity={0.8}
-          onPress={() => navigation?.navigate?.('Messages')}
+          onPress={() => navigation?.navigate?.('massage')}
         >
           <Ionicons name="chatbubble-outline" size={20} color={active === 'messages' ? '#C97B84' : '#E5BDC0'} />
         </TouchableOpacity>
