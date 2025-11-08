@@ -35,8 +35,13 @@ const MessagesScreen = ({ navigation }) => {
   ];
 
   const handleChatPress = (chat) => {
-    // Navigate to chat screen
-    navigation.navigate('chat', { chat });
+    // Navigate to chat screen// add configartion according to your api
+    navigation.navigate('chat', {
+      conversationId: '60f7b3b3b3b3b3b3b3b3b3b3', // Or null for new conversation
+      receiverId: '60f7b3b3b3b3b3b3b3b3b3b4', // User ID from MongoDB
+      receiverName: 'Zen Thai Studio',
+      currentUserId: '60f7b3b3b3b3b3b3b3b3b3b5', // Current logged-in user ID
+    });
   };
 
   return (

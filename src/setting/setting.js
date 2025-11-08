@@ -12,6 +12,7 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
+  Platform,
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Feather from 'react-native-vector-icons/Feather';
@@ -25,7 +26,6 @@ const { width } = Dimensions.get('window');
 
 const HORIZONTAL_PADDING = 20;
 const ROW_HEIGHT = 48;
-const PROFILE_CARD_TOP = 122;
 const MAX_CONTENT_WIDTH = Math.min(width - HORIZONTAL_PADDING * 2, 348);
 
 const ProfileRow = ({ label, value, onPress }) => (
@@ -60,7 +60,6 @@ const Setting = ({ navigation }) => {
         if (userDoc.exists) {
           setUserData(userDoc.data());
         } else {
-          // Create initial document if it doesn't exist
           const initialData = {
             uid: currentUser.uid,
             email: currentUser.email,
@@ -108,7 +107,6 @@ const Setting = ({ navigation }) => {
         updatedAt: firestore.FieldValue.serverTimestamp(),
       };
 
-      // Special handling for location
       if (modalType === 'location') {
         updateData.locationCompleted = true;
       }
@@ -130,7 +128,7 @@ const Setting = ({ navigation }) => {
     try {
       await auth().signOut();
       setLogoutModalVisible(false);
-      navigation.replace('Login'); // Adjust to your login screen name
+      navigation.replace('Login');
     } catch (error) {
       console.error('Error logging out:', error);
       Alert.alert('Error', 'Failed to log out');
@@ -272,23 +270,25 @@ const Setting = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor="#DEAAB2" />
+      <StatusBar barStyle="dark-content" backgroundColor="#D4A5AC" />
 
-      <LinearGradient
-        colors={['#DEAAB2', '#FFDDE5']}
-        start={{ x: -0.02, y: 0 }}
-        end={{ x: 0.97, y: 1 }}
-        style={styles.topGradient}
-      />
+      {/* Colored Header */}
+      <View style={styles.headerContainer}>
+        <LinearGradient
+          colors={['#D4A5AC', '#E8C4D4']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.headerGradient}
+        >
+          <Text style={styles.headerTitle}>Profile</Text>
+        </LinearGradient>
+      </View>
 
       <ScrollView
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.headerWrap}>
-          <Text style={styles.title}>Profile</Text>
-        </View>
-
+        {/* Profile Card */}
         <View style={styles.profileCardContainer}>
           <View style={styles.profileCardBackground} />
           
@@ -298,15 +298,16 @@ const Setting = ({ navigation }) => {
                 <View style={styles.avatarCircle}>
                   <Text style={styles.avatarEmoji}>😊</Text>
                 </View>
-                <View style={styles.editBadge}>
+                <TouchableOpacity style={styles.editBadge}>
                   <MaterialCommunityIcons name="pencil" size={14} color="#fff" />
-                </View>
+                </TouchableOpacity>
               </View>
             </View>
-            <Text style={styles.profileName}>{userData?.name || 'User'}</Text>
+            <Text style={styles.profileName}>{userData?.name || 'Samuel'}</Text>
           </View>
         </View>
 
+        {/* Personal Details Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Personal Details -</Text>
           <ProfileRow 
@@ -331,6 +332,7 @@ const Setting = ({ navigation }) => {
           />
         </View>
 
+        {/* Settings Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Settings -</Text>
           <ProfileRow 
@@ -345,6 +347,7 @@ const Setting = ({ navigation }) => {
           />
         </View>
 
+        {/* Logout Button */}
         <TouchableOpacity 
           style={styles.logoutBtn} 
           activeOpacity={0.9} 
@@ -357,7 +360,7 @@ const Setting = ({ navigation }) => {
 
       <BottomNav navigation={navigation} active="setting" />
 
-      {/* Modal for editing fields */}
+      {/* Edit Field Modal */}
       <Modal
         animationType="fade"
         transparent={true}
@@ -434,45 +437,50 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#EDE2E0',
   },
-  container: {
-    paddingTop: 40,
-    paddingBottom: 160,
-    paddingHorizontal: HORIZONTAL_PADDING,
-    alignItems: 'center',
-    backgroundColor: '#EDE2E0',
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#EDE2E0',
   },
-  topGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: PROFILE_CARD_TOP + 59,
-    zIndex: -1,
+  
+  // Header Styles
+  headerContainer: {
+    width: '100%',
+    overflow: 'hidden',
   },
-  headerWrap: {
+  headerGradient: {
+    width: '100%',
+    paddingTop: Platform.OS === 'ios' ? 60 : 50,
+    paddingBottom: 30,
+    paddingHorizontal: 20,
     alignItems: 'center',
-    marginTop: 50,
-    marginBottom: 20,
+    justifyContent: 'center',
   },
-  title: {
+  headerTitle: {
     fontSize: 32,
     fontWeight: '700',
     color: '#2D1B47',
+    letterSpacing: 0.5,
   },
+
+  // Container
+  container: {
+    paddingTop: 30,
+    paddingBottom: 160,
+    paddingHorizontal: HORIZONTAL_PADDING,
+    alignItems: 'center',
+    backgroundColor: '#EDE2E0',
+  },
+
+  // Profile Card
   profileCardContainer: {
     position: 'relative',
     width: 244,
     height: 140,
-    marginBottom: 25,
+    marginBottom: 30,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFF6EF',
   },
   profileCardBackground: {
     position: 'absolute',
@@ -517,7 +525,6 @@ const styles = StyleSheet.create({
   },
   avatarEmoji: {
     fontSize: 40,
-    color: '#fff',
   },
   editBadge: {
     position: 'absolute',
@@ -534,6 +541,8 @@ const styles = StyleSheet.create({
     color: '#7A6B7A',
     fontWeight: '500',
   },
+
+  // Sections
   section: {
     width: MAX_CONTENT_WIDTH,
     marginBottom: 25,
@@ -564,6 +573,8 @@ const styles = StyleSheet.create({
     color: '#2D1B47',
     fontWeight: '500',
   },
+
+  // Logout Button
   logoutBtn: {
     width: MAX_CONTENT_WIDTH,
     backgroundColor: '#FFF6EF',
@@ -586,7 +597,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Modal styles
+  // Modal Styles
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -694,7 +705,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 
-  // Logout Modal styles
+  // Logout Modal
   logoutModalContent: {
     width: '100%',
     maxWidth: 340,
@@ -712,7 +723,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#FEC9BE',
+    backgroundColor: '#F5DDD8',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,

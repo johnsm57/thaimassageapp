@@ -12,62 +12,224 @@ import {
   Dimensions,
   StatusBar,
   SafeAreaView,
+  ActivityIndicator,
 } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import LinearGradient from 'react-native-linear-gradient';
+import io from 'socket.io-client';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 const { width, height } = Dimensions.get('window');
 
-const ChatScreen = () => {
-  const [messages, setMessages] = useState([
-    {
-      id: '1',
-      text: 'What time you want to book your massage?',
-      time: '8:30 am',
-      isSent: false,
-      seen: true,
-    },
-    {
-      id: '2',
-      text: "Let's go for 3:30 pm",
-      time: '8:35 am',
-      isSent: true,
-      seen: true,
-    },
-    {
-      id: '3',
-      text: 'Ohk no problem. See you in the salon.',
-      time: '8:42 am',
-      isSent: false,
-      seen: true,
-    },
-  ]);
+// Backend URL - Replace with your actual backend URL
+const SOCKET_URL = 'http://192.168.100.11:5000'; // e.g., 'http://192.168.1.100:5000'
+const API_URL = 'http://192.168.100.11:5000/api';
 
+const ChatScreen = ({ route }) => {
+  // Get conversation details from navigation params
+  const { conversationId, receiverId, receiverName, currentUserId } = route.params;
+
+  const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [isReceiverOnline, setIsReceiverOnline] = useState(false);
+  const [loading, setLoading] = useState(true);
+  
+  const socketRef = useRef(null);
   const flatListRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
 
-  // Auto-scroll to bottom when messages change
+  // Initialize Socket.IO connection
   useEffect(() => {
-    if (flatListRef.current) {
-      flatListRef.current.scrollToEnd({ animated: true });
+    initializeSocket();
+    loadMessages();
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+    };
+  }, []);
+
+  const initializeSocket = () => {
+    socketRef.current = io(SOCKET_URL, {
+      transports: ['websocket'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
+
+    // Connection events
+    socketRef.current.on('connect', () => {
+      console.log('Connected to socket server');
+      socketRef.current.emit('user_connected', currentUserId);
+    });
+
+    socketRef.current.on('disconnect', () => {
+      console.log('Disconnected from socket server');
+    });
+
+    // Receive new message
+    socketRef.current.on('receive_message', (data) => {
+      const { message } = data;
+      
+      // Add message to state
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        {
+          id: message._id,
+          text: message.text,
+          time: formatTime(message.createdAt),
+          isSent: false,
+          seen: false,
+          image: message.imageUrl,
+        },
+      ]);
+
+      // Mark as delivered
+      socketRef.current.emit('message_delivered', message._id);
+      
+      // Mark as read (since user is in the chat)
+      socketRef.current.emit('message_read', {
+        messageId: message._id,
+        conversationId: conversationId,
+        userId: currentUserId,
+      });
+    });
+
+    // Message sent confirmation
+    socketRef.current.on('message_sent', (data) => {
+      const { message } = data;
+      
+      // Update message with server ID
+      setMessages((prevMessages) =>
+        prevMessages.map((msg) =>
+          msg.tempId === message.tempId
+            ? {
+                ...msg,
+                id: message._id,
+                time: formatTime(message.createdAt),
+              }
+            : msg
+        )
+      );
+    });
+
+    // Message status updates (delivered/read)
+    socketRef.current.on('message_status_update', (data) => {
+      const { messageId, isDelivered, isRead } = data;
+      
+      setMessages((prevMessages) =>
+        prevMessages.map((msg) =>
+          msg.id === messageId
+            ? {
+                ...msg,
+                delivered: isDelivered || msg.delivered,
+                seen: isRead || msg.seen,
+              }
+            : msg
+        )
+      );
+    });
+
+    // User online status
+    socketRef.current.on('user_status', (data) => {
+      const { userId, isOnline } = data;
+      if (userId === receiverId) {
+        setIsReceiverOnline(isOnline);
+      }
+    });
+
+    // Typing indicator
+    socketRef.current.on('user_typing', (data) => {
+      const { userId, isTyping } = data;
+      if (userId === receiverId) {
+        setIsTyping(isTyping);
+      }
+    });
+
+    // Error handling
+    socketRef.current.on('message_error', (data) => {
+      console.error('Message error:', data.error);
+      alert('Failed to send message. Please try again.');
+    });
+  };
+
+  const loadMessages = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(
+        `${API_URL}/messages/${conversationId}`
+      );
+
+      const formattedMessages = response.data.map((msg) => ({
+        id: msg._id,
+        text: msg.text,
+        time: formatTime(msg.createdAt),
+        isSent: msg.sender._id === currentUserId,
+        seen: msg.isRead,
+        delivered: msg.isDelivered,
+        image: msg.imageUrl,
+      }));
+
+      setMessages(formattedMessages);
+
+      // Mark all as read
+      await axios.post(`${API_URL}/messages/mark-read`, {
+        conversationId,
+        userId: currentUserId,
+      });
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    } finally {
+      setLoading(false);
     }
-  }, [messages]);
+  };
+
+  const formatTime = (timestamp) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+  };
 
   const handleSend = () => {
     if (inputText.trim()) {
+      const tempId = Date.now().toString();
       const newMessage = {
-        id: Date.now().toString(),
+        id: tempId,
+        tempId: tempId,
         text: inputText,
-        time: new Date().toLocaleTimeString('en-US', {
-          hour: 'numeric',
-          minute: '2-digit',
-          hour12: true,
-        }),
+        time: formatTime(new Date()),
         isSent: true,
         seen: false,
+        delivered: false,
       };
 
+      // Add message to UI immediately
       setMessages([...messages, newMessage]);
+      
+      // Emit to server
+      socketRef.current.emit('send_message', {
+        conversationId: conversationId,
+        senderId: currentUserId,
+        receiverId: receiverId,
+        text: inputText,
+        messageType: 'text',
+        tempId: tempId,
+      });
+
       setInputText('');
+      
+      // Stop typing indicator
+      socketRef.current.emit('typing', {
+        userId: currentUserId,
+        receiverId: receiverId,
+        isTyping: false,
+      });
     }
   };
 
@@ -78,7 +240,7 @@ const ChatScreen = () => {
       selectionLimit: 1,
     };
 
-    launchImageLibrary(options, (response) => {
+    launchImageLibrary(options, async (response) => {
       if (response.didCancel) {
         console.log('User cancelled image picker');
       } else if (response.errorCode) {
@@ -86,22 +248,73 @@ const ChatScreen = () => {
       } else if (response.assets && response.assets.length > 0) {
         const imageUri = response.assets[0].uri;
         
+        // In production, upload image to cloud storage (AWS S3, Cloudinary, etc.)
+        // For now, we'll send the local URI
+        
+        const tempId = Date.now().toString();
         const newMessage = {
-          id: Date.now().toString(),
+          id: tempId,
+          tempId: tempId,
           image: imageUri,
-          time: new Date().toLocaleTimeString('en-US', {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true,
-          }),
+          time: formatTime(new Date()),
           isSent: true,
           seen: false,
+          delivered: false,
         };
 
         setMessages([...messages, newMessage]);
+
+        // Emit to server
+        socketRef.current.emit('send_message', {
+          conversationId: conversationId,
+          senderId: currentUserId,
+          receiverId: receiverId,
+          messageType: 'image',
+          imageUrl: imageUri, // In production, this should be the cloud URL
+          tempId: tempId,
+        });
       }
     });
   };
+
+  const handleTyping = (text) => {
+    setInputText(text);
+
+    // Clear previous timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // Emit typing status
+    if (text.length > 0) {
+      socketRef.current.emit('typing', {
+        userId: currentUserId,
+        receiverId: receiverId,
+        isTyping: true,
+      });
+
+      // Stop typing after 2 seconds of inactivity
+      typingTimeoutRef.current = setTimeout(() => {
+        socketRef.current.emit('typing', {
+          userId: currentUserId,
+          receiverId: receiverId,
+          isTyping: false,
+        });
+      }, 2000);
+    } else {
+      socketRef.current.emit('typing', {
+        userId: currentUserId,
+        receiverId: receiverId,
+        isTyping: false,
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (flatListRef.current && messages.length > 0) {
+      flatListRef.current.scrollToEnd({ animated: true });
+    }
+  }, [messages]);
 
   const renderMessage = ({ item }) => (
     <View
@@ -125,8 +338,10 @@ const ChatScreen = () => {
         )}
       </View>
       <View style={[styles.messageInfo, item.isSent && styles.sentInfo]}>
-        {item.isSent && item.seen && (
-          <Text style={styles.seenText}>Seen</Text>
+        {item.isSent && (
+          <Text style={styles.seenText}>
+            {item.seen ? 'Seen' : item.delivered ? 'Delivered' : 'Sent'}
+          </Text>
         )}
         <Text style={styles.timeText}>{item.time}</Text>
       </View>
@@ -138,6 +353,14 @@ const ChatScreen = () => {
       <Text style={styles.dateText}>Today</Text>
     </View>
   );
+
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color="#D96073" />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -155,8 +378,14 @@ const ChatScreen = () => {
         </TouchableOpacity>
 
         <View style={styles.headerTextContainer}>
-          <Text style={styles.headerTitle}>Zen Thai Studio</Text>
-          <Text style={styles.headerSubtitle}>Active now 🟢</Text>
+          <Text style={styles.headerTitle}>{receiverName}</Text>
+          <Text style={styles.headerSubtitle}>
+            {isTyping
+              ? 'Typing...'
+              : isReceiverOnline
+              ? 'Active now 🟢'
+              : 'Offline'}
+          </Text>
         </View>
       </LinearGradient>
 
@@ -193,7 +422,7 @@ const ChatScreen = () => {
             placeholder="Enter your message..."
             placeholderTextColor="#9B868E"
             value={inputText}
-            onChangeText={setInputText}
+            onChangeText={handleTyping}
             multiline
             maxLength={500}
           />
@@ -211,6 +440,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#EDE2E0',
+  },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   header: {
     flexDirection: 'row',
