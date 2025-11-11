@@ -14,10 +14,12 @@ import {
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import { useLanguage } from '../../context/LanguageContext';
 
 const { width } = Dimensions.get('window');
 
 const Signup = ({ navigation }) => {
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -66,13 +68,33 @@ const Signup = ({ navigation }) => {
           photoURL: userData.photoURL || '',
           createdAt: firestore.FieldValue.serverTimestamp(),
           updatedAt: firestore.FieldValue.serverTimestamp(),
-        }, { merge: true }); // merge: true will update existing fields without overwriting entire document
+        }, { merge: true });
       
       console.log('User data saved successfully to Firestore');
       return { success: true };
     } catch (error) {
       console.error('Error saving user to Firestore:', error);
       return { success: false, error: error.message };
+    }
+  };
+
+  // Get translated error message for signup
+  const getSignupErrorMessage = (errorCode) => {
+    switch (errorCode) {
+      case 'auth/email-already-in-use':
+        return t('signup.emailAlreadyInUse');
+      case 'auth/invalid-email':
+        return t('signup.invalidEmail');
+      case 'auth/operation-not-allowed':
+        return t('signup.operationNotAllowed');
+      case 'auth/weak-password':
+        return t('signup.weakPassword');
+      case 'auth/network-request-failed':
+        return t('signup.networkError');
+      case 'auth/too-many-requests':
+        return t('signup.tooManyRequests');
+      default:
+        return t('signup.unexpectedError');
     }
   };
 
@@ -108,40 +130,37 @@ const Signup = ({ navigation }) => {
     } catch (error) {
       console.error('Error creating user account:', error);
       
-      let errorMessage = 'An error occurred while creating your account.';
-      
-      if (error && error.code) {
-        switch (error.code) {
-          case 'auth/email-already-in-use':
-            errorMessage = 'This email address is already registered. Please use a different email or try signing in.';
-            break;
-          case 'auth/invalid-email':
-            errorMessage = 'Please enter a valid email address.';
-            break;
-          case 'auth/operation-not-allowed':
-            errorMessage = 'Email/password accounts are not enabled. Please contact support.';
-            break;
-          case 'auth/weak-password':
-            errorMessage = 'Password is too weak. Please choose a stronger password.';
-            break;
-          case 'auth/network-request-failed':
-            errorMessage = 'Network error. Please check your internet connection and try again.';
-            break;
-          case 'auth/too-many-requests':
-            errorMessage = 'Too many failed attempts. Please try again later.';
-            break;
-          default:
-            errorMessage = error.message || 'An unexpected error occurred.';
-        }
-      } else if (error && error.message) {
-        errorMessage = error.message;
-      }
-      
       return {
         success: false,
-        error: errorMessage,
+        error: getSignupErrorMessage(error.code),
         code: error?.code || 'unknown'
       };
+    }
+  };
+
+  // Get translated error message for Google Sign-In
+  const getGoogleErrorMessage = (errorCode) => {
+    switch (errorCode) {
+      case statusCodes.SIGN_IN_CANCELLED:
+        return t('signup.signInCancelled');
+      case statusCodes.IN_PROGRESS:
+        return t('signup.signInInProgress');
+      case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
+        return t('signup.playServicesUnavailable');
+      case 'auth/account-exists-with-different-credential':
+        return t('signup.accountExists');
+      case 'auth/invalid-credential':
+        return t('signup.invalidCredential');
+      case 'auth/network-request-failed':
+        return t('signup.networkError');
+      case 'auth/user-disabled':
+        return t('signup.userDisabled');
+      case 'auth/operation-not-allowed':
+        return t('signup.operationNotAllowedGoogle');
+      case 'auth/configuration-not-found':
+        return t('signup.configurationNotFound');
+      default:
+        return t('signup.googleSignInFailed');
     }
   };
 
@@ -153,30 +172,24 @@ const Signup = ({ navigation }) => {
 
       console.log('Starting Google Sign-In process...');
 
-      // Check if your device supports Google Play
       await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
       console.log('Play Services available');
       
-      // Get the users ID token
       const signInResult = await GoogleSignin.signIn();
       console.log('Google Sign-In result:', signInResult);
       
-      // Handle the new response structure {type: 'success', data: {...}}
       let idToken, user;
       
       if (signInResult.type === 'success') {
-        // New format: {type: 'success', data: {idToken, user}}
         idToken = signInResult.data?.idToken;
         user = signInResult.data?.user;
         console.log('Using new response format');
       } else if (signInResult.idToken) {
-        // Old format: {idToken, user}
         idToken = signInResult.idToken;
         user = signInResult.user;
         console.log('Using old response format');
       }
       
-      // Check if we got the required data
       if (!idToken) {
         console.error('Sign-In result structure:', JSON.stringify(signInResult));
         throw new Error('Failed to get user credentials from Google Sign-In');
@@ -185,15 +198,11 @@ const Signup = ({ navigation }) => {
       console.log('Got ID token and user data');
       console.log('Google user info:', user);
       
-      // Create a Google credential with the token
       const googleCredential = auth.GoogleAuthProvider.credential(idToken);
-      
-      // Sign-in the user with the credential
       const userCredential = await auth().signInWithCredential(googleCredential);
       
       console.log('Firebase authentication successful:', userCredential.user);
       
-      // Save user data to Firestore
       const saveResult = await saveUserToFirestore(userCredential.user.uid, {
         name: user?.name || user?.givenName || userCredential.user.displayName || '',
         email: user?.email || userCredential.user.email || '',
@@ -206,54 +215,17 @@ const Signup = ({ navigation }) => {
         console.error('Failed to save user to Firestore, but authentication was successful');
       }
       
-      // Navigate to Home or profile completion screen
       navigation.navigate('Home');
       
     } catch (error) {
       console.error('Google Sign-In Error:', error);
       
-      let errorMessage = 'Google Sign-In failed. Please try again.';
+      let errorMessage = getGoogleErrorMessage(error?.code);
       
-      // Check if error exists and has a code property
-      if (error && typeof error === 'object') {
-        if (error.code) {
-          switch (error.code) {
-            case statusCodes.SIGN_IN_CANCELLED:
-              errorMessage = 'Sign-in was cancelled by user.';
-              break;
-            case statusCodes.IN_PROGRESS:
-              errorMessage = 'Sign-in is already in progress.';
-              break;
-            case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
-              errorMessage = 'Google Play Services not available or outdated.';
-              break;
-            case 'auth/account-exists-with-different-credential':
-              errorMessage = 'An account already exists with a different sign-in method.';
-              break;
-            case 'auth/invalid-credential':
-              errorMessage = 'Invalid credentials. Please try again.';
-              break;
-            case 'auth/network-request-failed':
-              errorMessage = 'Network error. Please check your internet connection.';
-              break;
-            case 'auth/user-disabled':
-              errorMessage = 'This account has been disabled. Please contact support.';
-              break;
-            case 'auth/operation-not-allowed':
-              errorMessage = 'Google Sign-In is not enabled. Please contact support.';
-              break;
-            case 'auth/configuration-not-found':
-              errorMessage = 'Google Sign-In configuration not found. Please contact support.';
-              break;
-            default:
-              errorMessage = error.message || 'Google Sign-In failed. Please try again.';
-          }
-        } else if (error.message) {
-          errorMessage = error.message;
-        }
+      if (error && typeof error === 'object' && error.message && !error.code) {
+        errorMessage = error.message;
       }
       
-      // Only set error message if sign-in wasn't cancelled
       if (error?.code !== statusCodes.SIGN_IN_CANCELLED) {
         setErrorMessage(errorMessage);
       }
@@ -268,22 +240,22 @@ const Signup = ({ navigation }) => {
     setErrorMessage('');
 
     if (!email.trim()) {
-      setErrorMessage('Please enter your email address');
+      setErrorMessage(t('signup.enterEmailError'));
       return;
     }
 
     if (!isValidEmail(email)) {
-      setErrorMessage('Please enter a valid email address');
+      setErrorMessage(t('signup.validEmailError'));
       return;
     }
 
     if (!password.trim()) {
-      setErrorMessage('Please enter a password');
+      setErrorMessage(t('signup.enterPasswordError'));
       return;
     }
 
     if (password.length < 8) {
-      setErrorMessage('Password must be at least 8 characters long');
+      setErrorMessage(t('signup.passwordTooShort'));
       return;
     }
 
@@ -299,7 +271,7 @@ const Signup = ({ navigation }) => {
       }
     } catch (error) {
       console.error('Create account error:', error);
-      setErrorMessage('An unexpected error occurred. Please try again.');
+      setErrorMessage(t('signup.unexpectedError'));
     } finally {
       setLoading(false);
     }
@@ -326,15 +298,15 @@ const Signup = ({ navigation }) => {
               <View style={styles.arrowContainer}>
                 <Text style={styles.backArrow}>‹</Text>
               </View>
-              <Text style={styles.backText}>Back</Text>
+              <Text style={styles.backText}>{t('signup.back')}</Text>
             </View>
           </TouchableOpacity>
         </View>
 
         {/* Title Section */}
         <View style={styles.titleSection}>
-          <Text style={styles.title}>Create an account</Text>
-          <Text style={styles.subtitle}>book your massage effortlessly and{'\n'}privately...</Text>
+          <Text style={styles.title}>{t('signup.createAccount')}</Text>
+          <Text style={styles.subtitle}>{t('signup.subtitle')}</Text>
         </View>
 
         {/* Error Message */}
@@ -350,7 +322,7 @@ const Signup = ({ navigation }) => {
           <View style={styles.inputContainer}>
             <TextInput
               style={[styles.textInput, errorMessage && styles.textInputError]}
-              placeholder="Enter your email"
+              placeholder={t('signup.enterEmail')}
               placeholderTextColor="#A68FA6"
               value={email}
               onChangeText={(text) => {
@@ -367,7 +339,7 @@ const Signup = ({ navigation }) => {
           <View style={styles.inputContainer}>
             <TextInput
               style={[styles.textInput, errorMessage && styles.textInputError]}
-              placeholder="Create password"
+              placeholder={t('signup.createPassword')}
               placeholderTextColor="#A68FA6"
               value={password}
               onChangeText={(text) => {
@@ -399,13 +371,13 @@ const Signup = ({ navigation }) => {
             {loading ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
-              <Text style={styles.createButtonText}>Create my account</Text>
+              <Text style={styles.createButtonText}>{t('signup.createButton')}</Text>
             )}
           </TouchableOpacity>
 
           {/* Divider */}
           <View style={styles.dividerSection}>
-            <Text style={styles.dividerText}>or sign up with</Text>
+            <Text style={styles.dividerText}>{t('signup.orSignUpWith')}</Text>
           </View>
 
           {/* Google Button */}
@@ -431,7 +403,7 @@ const Signup = ({ navigation }) => {
                 </View>
               )}
               <Text style={styles.googleButtonText}>
-                {googleLoading ? 'Signing in...' : 'create account with google'}
+                {googleLoading ? t('signup.signingIn') : t('signup.signUpWithGoogle')}
               </Text>
             </View>
           </TouchableOpacity>

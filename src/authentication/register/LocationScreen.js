@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,50 +12,61 @@ import {
 } from 'react-native';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
+import { useLanguage } from '../../context/LanguageContext';
 
 const { width } = Dimensions.get('window');
 
 const LocationScreen = ({ navigation }) => {
+  const { t, currentLanguage } = useLanguage();
   const [location, setLocation] = useState('');
   const [showLocationOptions, setShowLocationOptions] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Bangkok locations/districts
+  // Bangkok locations with translation keys
   const bangkokLocations = [
-    'Sukhumvit',
-    'Silom',
-    'Siam',
-    'Chatuchak',
-    'Thonglor',
-    'Ekkamai',
-    'Phrom Phong',
-    'Asok',
-    'Sathorn',
-    'Lumpini',
-    'Ratchathewi',
-    'Phaya Thai',
-    'Dusit',
-    'Bangsue',
-    'Huai Khwang',
-    'Wang Thonglang',
-    'Lat Phrao',
-    'Khlong Toei',
-    'Watthana',
-    'Bang Rak'
+    { value: 'Sukhumvit', key: 'sukhumvit' },
+    { value: 'Silom', key: 'silom' },
+    { value: 'Siam', key: 'siam' },
+    { value: 'Chatuchak', key: 'chatuchak' },
+    { value: 'Thonglor', key: 'thonglor' },
+    { value: 'Ekkamai', key: 'ekkamai' },
+    { value: 'Phrom Phong', key: 'phromPhong' },
+    { value: 'Asok', key: 'asok' },
+    { value: 'Sathorn', key: 'sathorn' },
+    { value: 'Lumpini', key: 'lumpini' },
+    { value: 'Ratchathewi', key: 'ratchathewi' },
+    { value: 'Phaya Thai', key: 'phayaThai' },
+    { value: 'Dusit', key: 'dusit' },
+    { value: 'Bangsue', key: 'bangsue' },
+    { value: 'Huai Khwang', key: 'huaiKhwang' },
+    { value: 'Wang Thonglang', key: 'wangThonglang' },
+    { value: 'Lat Phrao', key: 'latPhrao' },
+    { value: 'Khlong Toei', key: 'khlongToei' },
+    { value: 'Watthana', key: 'watthana' },
+    { value: 'Bang Rak', key: 'bangRak' },
   ];
 
   const handleLocationSelect = (selectedLocation) => {
     setLocation(selectedLocation);
     setShowLocationOptions(false);
-    if (errorMessage) setErrorMessage(''); // Clear error when user selects
+    if (errorMessage) setErrorMessage('');
+  };
+
+  // Get translated location label
+  const getLocationLabel = (value) => {
+    const locationObj = bangkokLocations.find(loc => loc.value === value);
+    if (locationObj) {
+      return t(`locationScreen.locations.${locationObj.key}`);
+    }
+    return value;
   };
 
   // Save location to Firestore
   const saveUserLocation = async () => {
     // Validate location selection
     if (!location) {
-      setErrorMessage('Please select your location');
+      setErrorMessage(t('locationScreen.selectLocationError'));
       return;
     }
 
@@ -67,9 +78,9 @@ const LocationScreen = ({ navigation }) => {
       const currentUser = auth().currentUser;
 
       if (!currentUser) {
-        setErrorMessage('No user is logged in. Please sign up first.');
+        setErrorMessage(t('locationScreen.noUserLoggedIn'));
         setLoading(false);
-        Alert.alert('Error', 'No user is logged in. Please sign up first.');
+        Alert.alert(t('locationScreen.error'), t('locationScreen.noUserLoggedIn'));
         return;
       }
 
@@ -81,33 +92,33 @@ const LocationScreen = ({ navigation }) => {
         .doc(userId)
         .set(
           {
-            location: location,
+            location: location, // Store the English value for consistency
             updatedAt: firestore.FieldValue.serverTimestamp(),
             locationCompleted: true,
           },
-          { merge: true } // merge: true will update existing document without overwriting other fields
+          { merge: true }
         );
 
       console.log('User location saved successfully!');
 
       // Navigate directly to Home without alert
-      navigation.navigate('login'); // Update with your actual route
+      navigation.navigate('login');
 
     } catch (error) {
       console.error('Error saving user location:', error);
       
-      let errorMsg = 'Failed to save location. Please try again.';
+      let errorMsg = t('locationScreen.saveFailed');
       
       if (error.code === 'firestore/permission-denied') {
-        errorMsg = 'Permission denied. Please check Firestore rules.';
+        errorMsg = t('locationScreen.permissionDenied');
       } else if (error.code === 'firestore/unavailable') {
-        errorMsg = 'Network error. Please check your internet connection.';
+        errorMsg = t('locationScreen.networkError');
       } else if (error.code === 'firestore/not-found') {
-        errorMsg = 'User profile not found. Please complete your profile first.';
+        errorMsg = t('locationScreen.profileNotFound');
       }
       
       setErrorMessage(errorMsg);
-      Alert.alert('Error', errorMsg);
+      Alert.alert(t('locationScreen.error'), errorMsg);
       
     } finally {
       setLoading(false);
@@ -128,19 +139,18 @@ const LocationScreen = ({ navigation }) => {
             disabled={loading}
           >
             <View style={styles.backButtonContainer}>
-              {/* Arrow with background circle */}
               <View style={styles.arrowContainer}>
                 <Text style={styles.backArrow}>‹</Text>
               </View>
-              <Text style={styles.backText}>Back</Text>
+              <Text style={styles.backText}>{t('locationScreen.back')}</Text>
             </View>
           </TouchableOpacity>
         </View>
 
         {/* Title Section */}
         <View style={styles.titleSection}>
-          <Text style={styles.title}>Complete your profile</Text>
-          <Text style={styles.subtitle}>To get you the best matches please{'\n'}enter your location...</Text>
+          <Text style={styles.title}>{t('locationScreen.title')}</Text>
+          <Text style={styles.subtitle}>{t('locationScreen.subtitle')}</Text>
         </View>
 
         {/* Error Message */}
@@ -168,7 +178,7 @@ const LocationScreen = ({ navigation }) => {
                 styles.dropdownText,
                 location ? styles.dropdownTextSelected : styles.dropdownTextPlaceholder
               ]}>
-                {location || "Select your location"}
+                {location ? getLocationLabel(location) : t('locationScreen.selectLocation')}
               </Text>
               <View style={styles.dropdownArrow}>
                 <Text style={[
@@ -190,22 +200,24 @@ const LocationScreen = ({ navigation }) => {
                 >
                   {bangkokLocations.map((option, index) => (
                     <TouchableOpacity
-                      key={index}
+                      key={option.value}
                       style={[
                         styles.locationOptionItem,
                         index === bangkokLocations.length - 1 && styles.locationOptionItemLast
                       ]}
-                      onPress={() => handleLocationSelect(option)}
+                      onPress={() => handleLocationSelect(option.value)}
                       activeOpacity={0.7}
                       disabled={loading}
                     >
-                      <Text style={styles.locationOptionText}>{option}</Text>
+                      <Text style={styles.locationOptionText}>
+                        {t(`locationScreen.locations.${option.key}`)}
+                      </Text>
                       <View style={styles.radioButtonContainer}>
                         <View style={[
                           styles.radioButton,
-                          location === option && styles.radioButtonSelected
+                          location === option.value && styles.radioButtonSelected
                         ]}>
-                          {location === option && <View style={styles.radioButtonInner} />}
+                          {location === option.value && <View style={styles.radioButtonInner} />}
                         </View>
                       </View>
                     </TouchableOpacity>
@@ -229,7 +241,7 @@ const LocationScreen = ({ navigation }) => {
             {loading ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
-              <Text style={styles.completeButtonText}>Complete my profile</Text>
+              <Text style={styles.completeButtonText}>{t('locationScreen.completeButton')}</Text>
             )}
           </TouchableOpacity>
         </View>

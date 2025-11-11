@@ -18,9 +18,11 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import BottomNav from '../component/BottomNav';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
+import { useLanguage } from '../context/LanguageContext';
 
 const { width } = Dimensions.get('window');
 
@@ -28,14 +30,63 @@ const HORIZONTAL_PADDING = 20;
 const ROW_HEIGHT = 48;
 const MAX_CONTENT_WIDTH = Math.min(width - HORIZONTAL_PADDING * 2, 348);
 
-const ProfileRow = ({ label, value, onPress }) => (
+const ProfileRow = ({ label, value, onPress, t, formatText, isNumeric = false, fieldType = 'text' }) => {
+  const [translatedValue, setTranslatedValue] = useState(value || label);
+  const { currentLanguage, translateDynamic } = useLanguage();
+
+  useEffect(() => {
+    const loadTranslation = async () => {
+      if (!value) {
+        setTranslatedValue(label);
+        return;
+      }
+
+      // Handle gender translation
+      if (value === 'Male' || value === 'Female') {
+        setTranslatedValue(t(`genderValues.${value}`));
+      }
+      // Handle numeric values (age, weight)
+      else if (isNumeric) {
+        setTranslatedValue(formatText(value));
+      }
+      // Handle dynamic text (location, name)
+      else if (fieldType === 'location' || fieldType === 'name') {
+        if (currentLanguage === 'th') {
+          const translated = await translateDynamic(value);
+          setTranslatedValue(translated);
+        } else {
+          setTranslatedValue(value);
+        }
+      }
+      // Default text
+      else {
+        setTranslatedValue(value);
+      }
+    };
+
+    loadTranslation();
+  }, [value, currentLanguage, fieldType]);
+
+  return (
+    <TouchableOpacity activeOpacity={0.8} onPress={onPress} style={styles.row}>
+      <Text style={styles.rowText}>{translatedValue}</Text>
+      <MaterialIcons name="keyboard-arrow-right" size={20} color="#C97B84" />
+    </TouchableOpacity>
+  );
+};
+
+// Language Option Row with Radio Button
+const LanguageOptionRow = ({ label, isSelected, onPress }) => (
   <TouchableOpacity activeOpacity={0.8} onPress={onPress} style={styles.row}>
-    <Text style={styles.rowText}>{value || label}</Text>
-    <MaterialIcons name="keyboard-arrow-right" size={20} color="#C97B84" />
+    <Text style={styles.rowText}>{label}</Text>
+    <View style={styles.radioButton}>
+      {isSelected && <View style={styles.radioButtonInner} />}
+    </View>
   </TouchableOpacity>
 );
 
 const Setting = ({ navigation }) => {
+  const { currentLanguage, changeLanguage, t, formatNum, formatText, translateDynamic } = useLanguage();
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
@@ -43,27 +94,50 @@ const Setting = ({ navigation }) => {
   const [modalType, setModalType] = useState('');
   const [modalValue, setModalValue] = useState('');
   const [tempValue, setTempValue] = useState('');
+  const [translatedName, setTranslatedName] = useState('');
 
   useEffect(() => {
     fetchUserData();
   }, []);
 
+  // Translate name when language or userData changes
+  useEffect(() => {
+    const translateName = async () => {
+      if (userData?.name) {
+        if (currentLanguage === 'th') {
+          const translated = await translateDynamic(userData.name);
+          setTranslatedName(translated);
+        } else {
+          setTranslatedName(userData.name);
+        }
+      }
+    };
+
+    translateName();
+  }, [userData?.name, currentLanguage]);
+
   const fetchUserData = async () => {
     try {
       const currentUser = auth().currentUser;
       if (currentUser) {
+        console.log('Fetching user data for:', currentUser.uid);
+        
         const userDoc = await firestore()
           .collection('Useraccount')
           .doc(currentUser.uid)
           .get();
 
         if (userDoc.exists) {
-          setUserData(userDoc.data());
+          const data = userDoc.data();
+          console.log('User data loaded:', data);
+          setUserData(data);
         } else {
+          console.log('No user document found, creating initial data');
           const initialData = {
             uid: currentUser.uid,
             email: currentUser.email,
-            name: currentUser.displayName || 'User',
+            name: currentUser.displayName || t('profile.name'),
+            selectedLanguageType: 'default',
             createdAt: firestore.FieldValue.serverTimestamp(),
             updatedAt: firestore.FieldValue.serverTimestamp(),
             profileCompleted: false,
@@ -77,9 +151,20 @@ const Setting = ({ navigation }) => {
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
-      Alert.alert('Error', 'Failed to load user data');
+      Alert.alert(t('alerts.error'), t('alerts.loadFailed'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle language type selection
+  const handleLanguageTypeSelect = async (lang) => {
+    try {
+      await changeLanguage(lang);
+      console.log(`Language changed to: ${lang}`);
+    } catch (error) {
+      console.error('Error updating language:', error);
+      Alert.alert(t('alerts.error'), t('alerts.languageUpdateFailed'));
     }
   };
 
@@ -100,10 +185,28 @@ const Setting = ({ navigation }) => {
   const saveField = async () => {
     try {
       const currentUser = auth().currentUser;
-      if (!currentUser) return;
+      if (!currentUser) {
+        Alert.alert(t('alerts.error'), t('alerts.noUser'));
+        return;
+      }
+
+      // For other fields, check if empty
+      if (modalType !== 'gender') {
+        if (!tempValue || tempValue.trim() === '') {
+          Alert.alert(t('alerts.error'), t('alerts.enterValue'));
+          return;
+        }
+      }
+
+      if (modalType === 'gender' && !tempValue) {
+        Alert.alert(t('alerts.error'), t('alerts.selectOption'));
+        return;
+      }
+
+      console.log(`Updating ${modalType} to:`, tempValue);
 
       const updateData = {
-        [modalType]: tempValue,
+        [modalType]: tempValue.trim ? tempValue.trim() : tempValue,
         updatedAt: firestore.FieldValue.serverTimestamp(),
       };
 
@@ -116,33 +219,58 @@ const Setting = ({ navigation }) => {
         .doc(currentUser.uid)
         .update(updateData);
 
+      console.log('Field updated successfully');
       setUserData((prev) => ({ ...prev, ...updateData }));
       closeModal();
+      
+      const fieldName = t(`personalDetails.${modalType}`);
+      Alert.alert(t('alerts.success'), `${fieldName} ${t('alerts.updateSuccess')}`);
     } catch (error) {
       console.error('Error updating field:', error);
-      Alert.alert('Error', 'Failed to update profile');
+      Alert.alert(t('alerts.error'), t('alerts.updateFailed'));
     }
   };
 
   const handleLogout = async () => {
     try {
+      console.log('🚪 Starting logout process...');
+      
+      await AsyncStorage.multiRemove(['userToken', 'isRegistered', 'userEmail']);
+      console.log('✅ AsyncStorage cleared');
+      
       await auth().signOut();
+      console.log('✅ Firebase sign out successful');
+      
       setLogoutModalVisible(false);
-      navigation.replace('Login');
+      
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'splash' }],
+      });
+      
+      console.log('✅ User logged out successfully');
     } catch (error) {
-      console.error('Error logging out:', error);
-      Alert.alert('Error', 'Failed to log out');
+      console.error('❌ Error logging out:', error);
+      Alert.alert(t('alerts.error'), t('alerts.logoutFailed'));
     }
   };
 
   const getModalTitle = () => {
     switch (modalType) {
-      case 'location': return 'Location';
-      case 'age': return 'Age';
-      case 'weight': return 'Weight';
-      case 'gender': return 'Gender';
-      case 'language': return 'Default Language';
-      case 'preference': return 'Preference Language';
+      case 'location': return t('personalDetails.location');
+      case 'age': return t('personalDetails.age');
+      case 'weight': return t('personalDetails.weight');
+      case 'gender': return t('personalDetails.gender');
+      default: return '';
+    }
+  };
+
+  const getModalPlaceholder = () => {
+    switch (modalType) {
+      case 'location': return t('modal.enterLocation');
+      case 'age': return t('modal.enterAge');
+      case 'weight': return t('modal.enterWeight');
+      case 'gender': return t('modal.selectGender');
       default: return '';
     }
   };
@@ -158,7 +286,7 @@ const Setting = ({ navigation }) => {
             ]}
             onPress={() => setTempValue('Male')}
           >
-            <Text style={styles.optionText}>Male</Text>
+            <Text style={styles.optionText}>{t('gender.male')}</Text>
             <View style={styles.radioButton}>
               {tempValue === 'Male' && <View style={styles.radioButtonInner} />}
             </View>
@@ -171,73 +299,9 @@ const Setting = ({ navigation }) => {
             ]}
             onPress={() => setTempValue('Female')}
           >
-            <Text style={styles.optionText}>Female</Text>
+            <Text style={styles.optionText}>{t('gender.female')}</Text>
             <View style={styles.radioButton}>
               {tempValue === 'Female' && <View style={styles.radioButtonInner} />}
-            </View>
-          </TouchableOpacity>
-        </View>
-      );
-    }
-
-    if (modalType === 'language') {
-      return (
-        <View style={styles.optionsContainer}>
-          <TouchableOpacity
-            style={[
-              styles.option,
-              tempValue === 'English' && styles.optionSelected,
-            ]}
-            onPress={() => setTempValue('English')}
-          >
-            <Text style={styles.optionText}>English</Text>
-            <View style={styles.radioButton}>
-              {tempValue === 'English' && <View style={styles.radioButtonInner} />}
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.option,
-              tempValue === 'Thai' && styles.optionSelected,
-            ]}
-            onPress={() => setTempValue('Thai')}
-          >
-            <Text style={styles.optionText}>Thai</Text>
-            <View style={styles.radioButton}>
-              {tempValue === 'Thai' && <View style={styles.radioButtonInner} />}
-            </View>
-          </TouchableOpacity>
-        </View>
-      );
-    }
-
-    if (modalType === 'preference') {
-      return (
-        <View style={styles.optionsContainer}>
-          <TouchableOpacity
-            style={[
-              styles.option,
-              tempValue === 'English' && styles.optionSelected,
-            ]}
-            onPress={() => setTempValue('English')}
-          >
-            <Text style={styles.optionText}>English</Text>
-            <View style={styles.radioButton}>
-              {tempValue === 'English' && <View style={styles.radioButtonInner} />}
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.option,
-              tempValue === 'Thai' && styles.optionSelected,
-            ]}
-            onPress={() => setTempValue('Thai')}
-          >
-            <Text style={styles.optionText}>Thai</Text>
-            <View style={styles.radioButton}>
-              {tempValue === 'Thai' && <View style={styles.radioButtonInner} />}
             </View>
           </TouchableOpacity>
         </View>
@@ -249,7 +313,7 @@ const Setting = ({ navigation }) => {
         style={styles.input}
         value={tempValue}
         onChangeText={setTempValue}
-        placeholder={`Enter ${getModalTitle()}`}
+        placeholder={getModalPlaceholder()}
         placeholderTextColor="#B5A5A5"
         keyboardType={
           modalType === 'age' || modalType === 'weight' ? 'numeric' : 'default'
@@ -280,7 +344,7 @@ const Setting = ({ navigation }) => {
           end={{ x: 1, y: 0 }}
           style={styles.headerGradient}
         >
-          <Text style={styles.headerTitle}>Profile</Text>
+          <Text style={styles.headerTitle}>{t('profile.header')}</Text>
         </LinearGradient>
       </View>
 
@@ -303,47 +367,69 @@ const Setting = ({ navigation }) => {
                 </TouchableOpacity>
               </View>
             </View>
-            <Text style={styles.profileName}>{userData?.name || 'Samuel'}</Text>
+            <Text style={styles.profileName}>
+              {translatedName || t('profile.name')}
+            </Text>
           </View>
         </View>
 
         {/* Personal Details Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Personal Details -</Text>
+          <Text style={styles.sectionTitle}>{t('personalDetails.title')}</Text>
           <ProfileRow 
-            label="Location" 
+            label={t('personalDetails.location')}
             value={userData?.location}
-            onPress={() => openModal('location', userData?.location)} 
+            onPress={() => openModal('location', userData?.location)}
+            t={t}
+            formatText={formatText}
+            isNumeric={false}
+            fieldType="location"
           />
           <ProfileRow 
-            label="Age" 
+            label={t('personalDetails.age')}
             value={userData?.age}
-            onPress={() => openModal('age', userData?.age)} 
+            onPress={() => openModal('age', userData?.age)}
+            t={t}
+            formatText={formatText}
+            isNumeric={true}
+            fieldType="age"
           />
           <ProfileRow 
-            label="Weight" 
+            label={t('personalDetails.weight')}
             value={userData?.weight}
-            onPress={() => openModal('weight', userData?.weight)} 
+            onPress={() => openModal('weight', userData?.weight)}
+            t={t}
+            formatText={formatText}
+            isNumeric={true}
+            fieldType="weight"
           />
           <ProfileRow 
-            label="Gender" 
+            label={t('personalDetails.gender')}
             value={userData?.gender}
-            onPress={() => openModal('gender', userData?.gender)} 
+            onPress={() => openModal('gender', userData?.gender)}
+            t={t}
+            formatText={formatText}
+            isNumeric={false}
+            fieldType="gender"
           />
         </View>
 
         {/* Settings Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Settings -</Text>
-          <ProfileRow 
-            label="default language" 
-            value={userData?.language}
-            onPress={() => openModal('language', userData?.language)} 
+          <Text style={styles.sectionTitle}>{t('settings.title')}</Text>
+          
+          {/* English (Default Language) */}
+          <LanguageOptionRow
+            label={t('settings.english')}
+            isSelected={currentLanguage === 'en'}
+            onPress={() => handleLanguageTypeSelect('en')}
           />
-          <ProfileRow 
-            label="preference" 
-            value={userData?.preference}
-            onPress={() => openModal('preference', userData?.preference)} 
+
+          {/* Thai (Preferred Language) */}
+          <LanguageOptionRow
+            label={t('settings.thai')}
+            isSelected={currentLanguage === 'th'}
+            onPress={() => handleLanguageTypeSelect('th')}
           />
         </View>
 
@@ -354,7 +440,7 @@ const Setting = ({ navigation }) => {
           onPress={() => setLogoutModalVisible(true)}
         >
           <Feather name="log-out" size={18} color="#C97B84" />
-          <Text style={styles.logoutText}>Log out</Text>
+          <Text style={styles.logoutText}>{t('logout.button')}</Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -378,14 +464,14 @@ const Setting = ({ navigation }) => {
                 style={styles.cancelButton} 
                 onPress={closeModal}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={styles.cancelButtonText}>{t('modal.cancel')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity 
                 style={styles.doneButton} 
                 onPress={saveField}
               >
-                <Text style={styles.doneButtonText}>Done</Text>
+                <Text style={styles.doneButtonText}>{t('modal.done')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -405,9 +491,9 @@ const Setting = ({ navigation }) => {
               <Feather name="log-out" size={48} color="#C97B84" />
             </View>
             
-            <Text style={styles.logoutModalTitle}>Log Out</Text>
+            <Text style={styles.logoutModalTitle}>{t('logout.title')}</Text>
             <Text style={styles.logoutModalMessage}>
-              Are you sure you want to log out?
+              {t('logout.message')}
             </Text>
 
             <View style={styles.modalButtons}>
@@ -415,14 +501,14 @@ const Setting = ({ navigation }) => {
                 style={styles.cancelButton} 
                 onPress={() => setLogoutModalVisible(false)}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={styles.cancelButtonText}>{t('modal.cancel')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity 
                 style={styles.logoutConfirmButton} 
                 onPress={handleLogout}
               >
-                <Text style={styles.doneButtonText}>Log Out</Text>
+                <Text style={styles.doneButtonText}>{t('logout.button')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -652,6 +738,7 @@ const styles = StyleSheet.create({
   optionSelected: {
     borderColor: '#C97B84',
     borderWidth: 2,
+    backgroundColor: '#F5E5E1',
   },
   optionText: {
     fontSize: 16,

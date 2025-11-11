@@ -3,9 +3,11 @@ import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useLanguage } from '../context/LanguageContext';
 
 const BottomNav = ({ navigation, active = 'home', bottomOffset = 18, fixedBottom }) => {
   const insets = useSafeAreaInsets();
+  const { t } = useLanguage();
 
   // If fixedBottom is provided, use it (quick explicit control).
   // Otherwise compute from safe area inset + bottomOffset.
@@ -22,7 +24,7 @@ const BottomNav = ({ navigation, active = 'home', bottomOffset = 18, fixedBottom
         >
           <View style={active === 'home' ? styles.navButtonActive : null}>
             <Icon name="home" size={20} color={active === 'home' ? '#C97B84' : '#E5BDC0'} />
-            {active === 'home' && <Text style={styles.navTextActive}>Home</Text>}
+            {active === 'home' && <Text style={styles.navTextActive}>{t('bottomNav.home')}</Text>}
           </View>
         </TouchableOpacity>
 
@@ -31,7 +33,10 @@ const BottomNav = ({ navigation, active = 'home', bottomOffset = 18, fixedBottom
           activeOpacity={0.8}
           onPress={() => navigation?.navigate?.('massage')}
         >
-          <Ionicons name="chatbubble-outline" size={20} color={active === 'messages' ? '#C97B84' : '#E5BDC0'} />
+          <View style={active === 'messages' ? styles.navButtonActive : null}>
+            <Ionicons name="chatbubble-outline" size={20} color={active === 'messages' ? '#C97B84' : '#E5BDC0'} />
+            {active === 'messages' && <Text style={styles.navTextActive}>{t('bottomNav.chat')}</Text>}
+          </View>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -41,7 +46,7 @@ const BottomNav = ({ navigation, active = 'home', bottomOffset = 18, fixedBottom
         >
           <View style={active === 'setting' ? styles.profileActive : null}>
             <Icon name="account-outline" size={20} color={active === 'setting' ? '#C97B84' : '#E5BDC0'} />
-            {active === 'setting' && <Text style={styles.profileLabel}>setting</Text>}
+            {active === 'setting' && <Text style={styles.profileLabel}>{t('bottomNav.setting')}</Text>}
           </View>
         </TouchableOpacity>
       </View>

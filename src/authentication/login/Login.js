@@ -14,10 +14,12 @@ import {
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import { useLanguage } from '../../context/LanguageContext';
 
 const { width } = Dimensions.get('window');
 
 const Login = ({ navigation }) => {
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -110,7 +112,6 @@ const Login = ({ navigation }) => {
       if (userDoc.exists) {
         const userData = userDoc.data();
         
-        // Add safety check for userData
         if (!userData) {
           console.log('User document exists but data is undefined');
           return { complete: false, needsLocation: false, needsProfile: true };
@@ -118,7 +119,6 @@ const Login = ({ navigation }) => {
         
         console.log('User profile data:', userData);
         
-        // Check if profile is complete
         if (userData.name && userData.gender && userData.location) {
           return { complete: true, needsLocation: false, needsProfile: false };
         } else if (userData.name && userData.gender) {
@@ -127,13 +127,34 @@ const Login = ({ navigation }) => {
           return { complete: false, needsLocation: false, needsProfile: true };
         }
       } else {
-        // No profile exists, needs to complete profile
         console.log('User document does not exist');
         return { complete: false, needsLocation: false, needsProfile: true };
       }
     } catch (error) {
       console.error('Error checking user profile:', error);
       return { complete: false, needsLocation: false, needsProfile: true };
+    }
+  };
+
+  // Get translated error message
+  const getErrorMessage = (errorCode) => {
+    switch (errorCode) {
+      case 'auth/invalid-email':
+        return t('login.invalidCredentials');
+      case 'auth/user-disabled':
+        return t('login.userDisabled');
+      case 'auth/user-not-found':
+        return t('login.userNotFound');
+      case 'auth/wrong-password':
+        return t('login.wrongPassword');
+      case 'auth/invalid-credential':
+        return t('login.invalidCredential');
+      case 'auth/network-request-failed':
+        return t('login.networkError');
+      case 'auth/too-many-requests':
+        return t('login.tooManyRequests');
+      default:
+        return t('login.unexpectedError');
     }
   };
 
@@ -157,37 +178,9 @@ const Login = ({ navigation }) => {
     } catch (error) {
       console.error('Error logging in:', error);
       
-      let errorMessage = 'An error occurred while logging in.';
-      
-      switch (error.code) {
-        case 'auth/invalid-email':
-          errorMessage = 'Please enter a valid email address.';
-          break;
-        case 'auth/user-disabled':
-          errorMessage = 'This account has been disabled. Please contact support.';
-          break;
-        case 'auth/user-not-found':
-          errorMessage = 'No account found with this email. Please sign up first.';
-          break;
-        case 'auth/wrong-password':
-          errorMessage = 'Incorrect password. Please try again.';
-          break;
-        case 'auth/invalid-credential':
-          errorMessage = 'Invalid email or password. Please check your credentials.';
-          break;
-        case 'auth/network-request-failed':
-          errorMessage = 'Network error. Please check your internet connection.';
-          break;
-        case 'auth/too-many-requests':
-          errorMessage = 'Too many failed login attempts. Please try again later.';
-          break;
-        default:
-          errorMessage = error.message || 'An unexpected error occurred.';
-      }
-      
       return {
         success: false,
-        error: errorMessage,
+        error: getErrorMessage(error.code),
         code: error.code
       };
     }
@@ -201,30 +194,24 @@ const Login = ({ navigation }) => {
 
       console.log('Starting Google Sign-In process...');
 
-      // Check if device supports Google Play
       await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
       console.log('Play Services available');
       
-      // Get the user's ID token
       const signInResult = await GoogleSignin.signIn();
       console.log('Google Sign-In result:', signInResult);
       
-      // Handle the new response structure {type: 'success', data: {...}}
       let idToken, user;
       
       if (signInResult.type === 'success') {
-        // New format: {type: 'success', data: {idToken, user}}
         idToken = signInResult.data?.idToken;
         user = signInResult.data?.user;
         console.log('Using new response format');
       } else if (signInResult.idToken) {
-        // Old format: {idToken, user}
         idToken = signInResult.idToken;
         user = signInResult.user;
         console.log('Using old response format');
       }
       
-      // Check if we got the required data
       if (!idToken) {
         console.error('Sign-In result structure:', JSON.stringify(signInResult));
         throw new Error('Failed to get user credentials from Google Sign-In');
@@ -233,15 +220,11 @@ const Login = ({ navigation }) => {
       console.log('Got ID token and user data');
       console.log('Google user info:', user);
       
-      // Create a Google credential with the token
       const googleCredential = auth.GoogleAuthProvider.credential(idToken);
-      
-      // Sign-in the user with the credential
       const userCredential = await auth().signInWithCredential(googleCredential);
       
       console.log('Firebase authentication successful:', userCredential.user);
       
-      // Save user data to Firestore
       const saveResult = await saveUserToFirestore(userCredential.user.uid, {
         name: user?.name || user?.givenName || userCredential.user.displayName || '',
         email: user?.email || userCredential.user.email || '',
@@ -254,62 +237,56 @@ const Login = ({ navigation }) => {
         console.error('Failed to save user to Firestore, but authentication was successful');
       }
       
-      // Check profile completion and navigate accordingly
       const profileStatus = await checkUserProfile(userCredential.user.uid);
 
       if (profileStatus.complete) {
-        // Profile is complete, navigate to Home
         navigation.navigate('Home');
       } else if (profileStatus.needsProfile) {
-        // Needs to complete profile
         navigation.navigate('Home');
       } else if (profileStatus.needsLocation) {
-        // Needs to complete location
         navigation.navigate('location');
       }
       
     } catch (error) {
       console.error('Google Sign-In Error:', error);
       
-      let errorMessage = 'Google Sign-In failed. Please try again.';
+      let errorMessage = t('login.googleSignInFailed');
       
-      // Check if error exists and has a code property
       if (error && typeof error === 'object') {
         if (error.code) {
           switch (error.code) {
             case statusCodes.SIGN_IN_CANCELLED:
-              errorMessage = 'Sign-in was cancelled by user.';
+              errorMessage = t('login.signInCancelled');
               break;
             case statusCodes.IN_PROGRESS:
-              errorMessage = 'Sign-in is already in progress.';
+              errorMessage = t('login.signInInProgress');
               break;
             case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
-              errorMessage = 'Google Play Services not available or outdated.';
+              errorMessage = t('login.playServicesUnavailable');
               break;
             case 'auth/account-exists-with-different-credential':
-              errorMessage = 'An account already exists with a different sign-in method.';
+              errorMessage = t('login.accountExists');
               break;
             case 'auth/invalid-credential':
-              errorMessage = 'Invalid credentials. Please try again.';
+              errorMessage = t('login.invalidCredential');
               break;
             case 'auth/network-request-failed':
-              errorMessage = 'Network error. Please check your internet connection.';
+              errorMessage = t('login.networkError');
               break;
             case 'auth/user-disabled':
-              errorMessage = 'This account has been disabled. Please contact support.';
+              errorMessage = t('login.userDisabled');
               break;
             case 'auth/operation-not-allowed':
-              errorMessage = 'Google Sign-In is not enabled. Please contact support.';
+              errorMessage = t('login.operationNotAllowed');
               break;
             default:
-              errorMessage = error.message || 'Google Sign-In failed. Please try again.';
+              errorMessage = error.message || t('login.googleSignInFailed');
           }
         } else if (error.message) {
           errorMessage = error.message;
         }
       }
       
-      // Only set error message if sign-in wasn't cancelled
       if (error?.code !== statusCodes.SIGN_IN_CANCELLED) {
         setErrorMessage(errorMessage);
       }
@@ -321,22 +298,20 @@ const Login = ({ navigation }) => {
 
   // Handle login with email/password
   const handleLogin = async () => {
-    // Clear previous error
     setErrorMessage('');
 
-    // Validate inputs
     if (!email.trim()) {
-      setErrorMessage('Please enter your email address');
+      setErrorMessage(t('login.enterEmailError'));
       return;
     }
 
     if (!isValidEmail(email)) {
-      setErrorMessage('Please enter a valid email address');
+      setErrorMessage(t('login.validEmailError'));
       return;
     }
 
     if (!password.trim()) {
-      setErrorMessage('Please enter your password');
+      setErrorMessage(t('login.enterPasswordError'));
       return;
     }
 
@@ -346,26 +321,21 @@ const Login = ({ navigation }) => {
       const result = await loginUser(email.trim(), password);
 
       if (result.success) {
-        // Login successful - Check profile completion
         const profileStatus = await checkUserProfile(result.user.uid);
 
         if (profileStatus.complete) {
-          // Profile is complete, navigate to Home
           navigation.navigate('Home');
         } else if (profileStatus.needsProfile) {
-          // Needs to complete profile
           navigation.navigate('profile');
         } else if (profileStatus.needsLocation) {
-          // Needs to complete location
           navigation.navigate('location');
         }
       } else {
-        // Show error message
         setErrorMessage(result.error);
       }
     } catch (error) {
       console.error('Login error:', error);
-      setErrorMessage('An unexpected error occurred. Please try again.');
+      setErrorMessage(t('login.unexpectedError'));
     } finally {
       setLoading(false);
     }
@@ -379,31 +349,31 @@ const Login = ({ navigation }) => {
   // Handle forgot password
   const handleForgotPassword = async () => {
     if (!email.trim()) {
-      Alert.alert('Email Required', 'Please enter your email address first.');
+      Alert.alert(t('login.emailRequired'), t('login.emailRequiredMessage'));
       return;
     }
 
     if (!isValidEmail(email)) {
-      Alert.alert('Invalid Email', 'Please enter a valid email address.');
+      Alert.alert(t('login.invalidEmail'), t('login.invalidEmailMessage'));
       return;
     }
 
     try {
       await auth().sendPasswordResetEmail(email.trim());
       Alert.alert(
-        'Password Reset Email Sent',
-        'Please check your email for instructions to reset your password.',
-        [{ text: 'OK' }]
+        t('login.passwordResetSent'),
+        t('login.passwordResetMessage'),
+        [{ text: t('login.ok') }]
       );
     } catch (error) {
       console.error('Error sending password reset email:', error);
       
-      let errorMsg = 'Failed to send password reset email.';
+      let errorMsg = t('login.passwordResetFailed');
       if (error.code === 'auth/user-not-found') {
-        errorMsg = 'No account found with this email address.';
+        errorMsg = t('login.noAccountFound');
       }
       
-      Alert.alert('Error', errorMsg);
+      Alert.alert(t('alerts.error'), errorMsg);
     }
   };
 
@@ -421,19 +391,18 @@ const Login = ({ navigation }) => {
             disabled={loading || googleLoading}
           >
             <View style={styles.backButtonContainer}>
-              {/* Arrow with background circle */}
               <View style={styles.arrowContainer}>
                 <Text style={styles.backArrow}>‹</Text>
               </View>
-              <Text style={styles.backText}>Back</Text>
+              <Text style={styles.backText}>{t('login.back')}</Text>
             </View>
           </TouchableOpacity>
         </View>
 
         {/* Title Section */}
         <View style={styles.titleSection}>
-          <Text style={styles.title}>Welcome Back !</Text>
-          <Text style={styles.subtitle}>let's get you back to effortless{'\n'}massage booking...</Text>
+          <Text style={styles.title}>{t('login.welcomeBack')}</Text>
+          <Text style={styles.subtitle}>{t('login.subtitle')}</Text>
         </View>
 
         {/* Error Message */}
@@ -449,7 +418,7 @@ const Login = ({ navigation }) => {
           <View style={styles.inputContainer}>
             <TextInput
               style={[styles.textInput, errorMessage && styles.textInputError]}
-              placeholder="Enter your email"
+              placeholder={t('login.enterEmail')}
               placeholderTextColor="#A68FA6"
               value={email}
               onChangeText={(text) => {
@@ -466,7 +435,7 @@ const Login = ({ navigation }) => {
           <View style={styles.inputContainer}>
             <TextInput
               style={[styles.textInput, errorMessage && styles.textInputError]}
-              placeholder="what's your password?"
+              placeholder={t('login.enterPassword')}
               placeholderTextColor="#A68FA6"
               value={password}
               onChangeText={(text) => {
@@ -495,7 +464,7 @@ const Login = ({ navigation }) => {
               onPress={handleForgotPassword}
               disabled={loading || googleLoading}
             >
-              <Text style={styles.forgotPasswordText}>forgot password?</Text>
+              <Text style={styles.forgotPasswordText}>{t('login.forgotPassword')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -509,13 +478,13 @@ const Login = ({ navigation }) => {
             {loading ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
-              <Text style={styles.loginButtonText}>Login to my account</Text>
+              <Text style={styles.loginButtonText}>{t('login.loginButton')}</Text>
             )}
           </TouchableOpacity>
 
           {/* Divider */}
           <View style={styles.dividerSection}>
-            <Text style={styles.dividerText}>or log in with</Text>
+            <Text style={styles.dividerText}>{t('login.orLoginWith')}</Text>
           </View>
 
           {/* Google Button */}
@@ -541,7 +510,7 @@ const Login = ({ navigation }) => {
                 </View>
               )}
               <Text style={styles.googleButtonText}>
-                {googleLoading ? 'Logging in...' : 'Log in with google'}
+                {googleLoading ? t('login.loggingIn') : t('login.loginWithGoogle')}
               </Text>
             </View>
           </TouchableOpacity>

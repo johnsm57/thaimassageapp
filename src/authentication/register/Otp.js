@@ -9,14 +9,21 @@ import {
   ScrollView,
   Dimensions,
 } from 'react-native';
+import { useLanguage } from '../../context/LanguageContext';
 
 const { width } = Dimensions.get('window');
 
 const Otp = ({ navigation }) => {
+  const { t } = useLanguage();
   const [otp, setOtp] = useState(['', '', '', '']);
   const inputRefs = [useRef(null), useRef(null), useRef(null), useRef(null)];
 
   const handleOtpChange = (value, index) => {
+    // Only allow numeric input
+    if (value && !/^\d$/.test(value)) {
+      return;
+    }
+
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
@@ -31,6 +38,16 @@ const Otp = ({ navigation }) => {
     // Handle backspace to go to previous input
     if (e.nativeEvent.key === 'Backspace' && !otp[index] && index > 0) {
       inputRefs[index - 1].current?.focus();
+    }
+  };
+
+  const handleVerify = () => {
+    // Check if all OTP digits are filled
+    const isComplete = otp.every(digit => digit !== '');
+    
+    if (isComplete) {
+      // Navigate to profile screen
+      navigation.navigate('profile');
     }
   };
 
@@ -51,15 +68,15 @@ const Otp = ({ navigation }) => {
               <View style={styles.arrowContainer}>
                 <Text style={styles.backArrow}>‹</Text>
               </View>
-              <Text style={styles.backText}>Back</Text>
+              <Text style={styles.backText}>{t('otp.back')}</Text>
             </View>
           </TouchableOpacity>
         </View>
 
         {/* Title Section */}
         <View style={styles.titleSection}>
-          <Text style={styles.title}>Let's verify your email</Text>
-          <Text style={styles.subtitle}>Enter the 4-digit code we have sent you to{'\n'}your email address</Text>
+          <Text style={styles.title}>{t('otp.title')}</Text>
+          <Text style={styles.subtitle}>{t('otp.subtitle')}</Text>
         </View>
 
         {/* OTP Input Section */}
@@ -93,9 +110,9 @@ const Otp = ({ navigation }) => {
           <TouchableOpacity 
             style={styles.verifyButton}
             activeOpacity={0.8}
-            onPress={()=>navigation.navigate("profile")}
+            onPress={handleVerify}
           >
-            <Text style={styles.verifyButtonText}>Verify my email</Text>
+            <Text style={styles.verifyButtonText}>{t('otp.verifyButton')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

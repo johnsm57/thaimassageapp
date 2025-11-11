@@ -13,12 +13,14 @@ import {
   StatusBar,
   SafeAreaView,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import LinearGradient from 'react-native-linear-gradient';
 import io from 'socket.io-client';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLanguage } from '../context/LanguageContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -26,7 +28,9 @@ const { width, height } = Dimensions.get('window');
 const SOCKET_URL = 'http://192.168.100.11:5000'; // e.g., 'http://192.168.1.100:5000'
 const API_URL = 'http://192.168.100.11:5000/api';
 
-const ChatScreen = ({ route }) => {
+const ChatScreen = ({ route, navigation }) => {
+  const { currentLanguage, t, formatText, translateDynamic } = useLanguage();
+  
   // Get conversation details from navigation params
   const { conversationId, receiverId, receiverName, currentUserId } = route.params;
 
@@ -35,10 +39,24 @@ const ChatScreen = ({ route }) => {
   const [isTyping, setIsTyping] = useState(false);
   const [isReceiverOnline, setIsReceiverOnline] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [translatedReceiverName, setTranslatedReceiverName] = useState(receiverName);
   
   const socketRef = useRef(null);
   const flatListRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+
+  // Translate receiver name when language changes
+  useEffect(() => {
+    const translateName = async () => {
+      if (currentLanguage === 'th') {
+        const translated = await translateDynamic(receiverName);
+        setTranslatedReceiverName(translated);
+      } else {
+        setTranslatedReceiverName(receiverName);
+      }
+    };
+    translateName();
+  }, [receiverName, currentLanguage]);
 
   // Initialize Socket.IO connection
   useEffect(() => {
@@ -152,7 +170,7 @@ const ChatScreen = ({ route }) => {
     // Error handling
     socketRef.current.on('message_error', (data) => {
       console.error('Message error:', data.error);
-      alert('Failed to send message. Please try again.');
+      Alert.alert(t('alerts.error'), t('chat.messageSendFailed'));
     });
   };
 
@@ -189,11 +207,20 @@ const ChatScreen = ({ route }) => {
 
   const formatTime = (timestamp) => {
     const date = new Date(timestamp);
-    return date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const formattedHours = hours % 12 || 12;
+    const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
+    
+    const timeString = `${formattedHours}:${formattedMinutes} ${period}`;
+    
+    // Convert to Thai numerals if Thai language
+    if (currentLanguage === 'th') {
+      return formatText(timeString.replace('AM', 'น.').replace('PM', 'น.'));
+    }
+    
+    return timeString;
   };
 
   const handleSend = () => {
@@ -248,9 +275,6 @@ const ChatScreen = ({ route }) => {
       } else if (response.assets && response.assets.length > 0) {
         const imageUri = response.assets[0].uri;
         
-        // In production, upload image to cloud storage (AWS S3, Cloudinary, etc.)
-        // For now, we'll send the local URI
-        
         const tempId = Date.now().toString();
         const newMessage = {
           id: tempId,
@@ -270,7 +294,7 @@ const ChatScreen = ({ route }) => {
           senderId: currentUserId,
           receiverId: receiverId,
           messageType: 'image',
-          imageUrl: imageUri, // In production, this should be the cloud URL
+          imageUrl: imageUri,
           tempId: tempId,
         });
       }
@@ -316,6 +340,12 @@ const ChatScreen = ({ route }) => {
     }
   }, [messages]);
 
+  const getStatusText = (item) => {
+    if (item.seen) return t('chat.seen');
+    if (item.delivered) return t('chat.delivered');
+    return t('chat.sent');
+  };
+
   const renderMessage = ({ item }) => (
     <View
       style={[
@@ -340,7 +370,7 @@ const ChatScreen = ({ route }) => {
       <View style={[styles.messageInfo, item.isSent && styles.sentInfo]}>
         {item.isSent && (
           <Text style={styles.seenText}>
-            {item.seen ? 'Seen' : item.delivered ? 'Delivered' : 'Sent'}
+            {getStatusText(item)}
           </Text>
         )}
         <Text style={styles.timeText}>{item.time}</Text>
@@ -350,9 +380,15 @@ const ChatScreen = ({ route }) => {
 
   const renderDateSeparator = () => (
     <View style={styles.dateSeparator}>
-      <Text style={styles.dateText}>Today</Text>
+      <Text style={styles.dateText}>{t('chat.today')}</Text>
     </View>
   );
+
+  const getSubtitleText = () => {
+    if (isTyping) return t('chat.typing');
+    if (isReceiverOnline) return t('chat.activeNow');
+    return t('chat.offline');
+  };
 
   if (loading) {
     return (
@@ -373,18 +409,17 @@ const ChatScreen = ({ route }) => {
         end={{ x: 1, y: 1 }}
         style={styles.header}
       >
-        <TouchableOpacity style={styles.backButton}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
           <Text style={styles.backIcon}>‹</Text>
         </TouchableOpacity>
 
         <View style={styles.headerTextContainer}>
-          <Text style={styles.headerTitle}>{receiverName}</Text>
+          <Text style={styles.headerTitle}>{translatedReceiverName}</Text>
           <Text style={styles.headerSubtitle}>
-            {isTyping
-              ? 'Typing...'
-              : isReceiverOnline
-              ? 'Active now 🟢'
-              : 'Offline'}
+            {getSubtitleText()}
           </Text>
         </View>
       </LinearGradient>
@@ -419,7 +454,7 @@ const ChatScreen = ({ route }) => {
 
           <TextInput
             style={styles.input}
-            placeholder="Enter your message..."
+            placeholder={t('chat.enterMessage')}
             placeholderTextColor="#9B868E"
             value={inputText}
             onChangeText={handleTyping}

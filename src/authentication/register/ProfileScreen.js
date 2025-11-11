@@ -13,34 +13,46 @@ import {
 } from 'react-native';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
+import { useLanguage } from '../../context/LanguageContext';
 
 const { width } = Dimensions.get('window');
 
 const ProfileScreen = ({ navigation }) => {
+  const { t } = useLanguage();
   const [name, setName] = useState('');
   const [gender, setGender] = useState('');
   const [showGenderOptions, setShowGenderOptions] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const genderOptions = ['Male', 'Female'];
+  // Gender options with translation keys
+  const genderOptions = [
+    { value: 'Male', label: t('profileScreen.male') },
+    { value: 'Female', label: t('profileScreen.female') }
+  ];
 
   const handleGenderSelect = (selectedGender) => {
     setGender(selectedGender);
     setShowGenderOptions(false);
-    if (errorMessage) setErrorMessage(''); // Clear error when user selects
+    if (errorMessage) setErrorMessage('');
+  };
+
+  // Get translated gender label for display
+  const getGenderLabel = (value) => {
+    const option = genderOptions.find(opt => opt.value === value);
+    return option ? option.label : value;
   };
 
   // Save user profile to Firestore
   const saveUserProfile = async () => {
     // Validate inputs
     if (!name.trim()) {
-      setErrorMessage('Please enter your name');
+      setErrorMessage(t('profileScreen.enterNameError'));
       return;
     }
 
     if (!gender) {
-      setErrorMessage('Please select your gender');
+      setErrorMessage(t('profileScreen.selectGenderError'));
       return;
     }
 
@@ -52,7 +64,7 @@ const ProfileScreen = ({ navigation }) => {
       const currentUser = auth().currentUser;
 
       if (!currentUser) {
-        setErrorMessage('No user is logged in. Please sign up first.');
+        setErrorMessage(t('profileScreen.noUserLoggedIn'));
         setLoading(false);
         return;
       }
@@ -65,7 +77,7 @@ const ProfileScreen = ({ navigation }) => {
         uid: userId,
         email: userEmail,
         name: name.trim(),
-        gender: gender,
+        gender: gender, // Store the value (Male/Female) not the translation
         createdAt: firestore.FieldValue.serverTimestamp(),
         updatedAt: firestore.FieldValue.serverTimestamp(),
         profileCompleted: true,
@@ -75,7 +87,7 @@ const ProfileScreen = ({ navigation }) => {
       await firestore()
         .collection('Useraccount')
         .doc(userId)
-        .set(userData, { merge: true }); // merge: true will update if document exists
+        .set(userData, { merge: true });
 
       console.log('User profile saved successfully!');
 
@@ -85,16 +97,16 @@ const ProfileScreen = ({ navigation }) => {
     } catch (error) {
       console.error('Error saving user profile:', error);
       
-      let errorMsg = 'Failed to save profile. Please try again.';
+      let errorMsg = t('profileScreen.saveFailed');
       
       if (error.code === 'firestore/permission-denied') {
-        errorMsg = 'Permission denied. Please check Firestore rules.';
+        errorMsg = t('profileScreen.permissionDenied');
       } else if (error.code === 'firestore/unavailable') {
-        errorMsg = 'Network error. Please check your internet connection.';
+        errorMsg = t('profileScreen.networkError');
       }
       
       setErrorMessage(errorMsg);
-      Alert.alert('Error', errorMsg);
+      Alert.alert(t('profileScreen.error'), errorMsg);
     } finally {
       setLoading(false);
     }
@@ -114,19 +126,18 @@ const ProfileScreen = ({ navigation }) => {
             disabled={loading}
           >
             <View style={styles.backButtonContainer}>
-              {/* Arrow with background circle */}
               <View style={styles.arrowContainer}>
                 <Text style={styles.backArrow}>‹</Text>
               </View>
-              <Text style={styles.backText}>Back</Text>
+              <Text style={styles.backText}>{t('profileScreen.back')}</Text>
             </View>
           </TouchableOpacity>
         </View>
 
         {/* Title Section */}
         <View style={styles.titleSection}>
-          <Text style={styles.title}>Complete your profile</Text>
-          <Text style={styles.subtitle}>To get you the best matches please{'\n'}enter below details...</Text>
+          <Text style={styles.title}>{t('profileScreen.title')}</Text>
+          <Text style={styles.subtitle}>{t('profileScreen.subtitle')}</Text>
         </View>
 
         {/* Error Message */}
@@ -142,7 +153,7 @@ const ProfileScreen = ({ navigation }) => {
           <View style={styles.inputContainer}>
             <TextInput
               style={[styles.textInput, errorMessage && !name.trim() && styles.textInputError]}
-              placeholder="Enter your good name"
+              placeholder={t('profileScreen.enterName')}
               placeholderTextColor="#A68FA6"
               value={name}
               onChangeText={(text) => {
@@ -170,7 +181,7 @@ const ProfileScreen = ({ navigation }) => {
                 styles.dropdownText,
                 gender ? styles.dropdownTextSelected : styles.dropdownTextPlaceholder
               ]}>
-                {gender || "what's your gender ?"}
+                {gender ? getGenderLabel(gender) : t('profileScreen.selectGender')}
               </Text>
               <View style={styles.dropdownArrow}>
                 <Text style={[
@@ -182,27 +193,27 @@ const ProfileScreen = ({ navigation }) => {
               </View>
             </TouchableOpacity>
 
-            {/* Gender Options - Exact layout specifications */}
+            {/* Gender Options */}
             {showGenderOptions && (
               <View style={styles.genderOptionsContainer}>
                 {genderOptions.map((option, index) => (
                   <TouchableOpacity
-                    key={index}
+                    key={option.value}
                     style={[
                       styles.genderOptionItem,
                       index === genderOptions.length - 1 && styles.genderOptionItemLast
                     ]}
-                    onPress={() => handleGenderSelect(option)}
+                    onPress={() => handleGenderSelect(option.value)}
                     activeOpacity={0.7}
                     disabled={loading}
                   >
-                    <Text style={styles.genderOptionText}>{option}</Text>
+                    <Text style={styles.genderOptionText}>{option.label}</Text>
                     <View style={styles.radioButtonContainer}>
                       <View style={[
                         styles.radioButton,
-                        gender === option && styles.radioButtonSelected
+                        gender === option.value && styles.radioButtonSelected
                       ]}>
-                        {gender === option && <View style={styles.radioButtonInner} />}
+                        {gender === option.value && <View style={styles.radioButtonInner} />}
                       </View>
                     </View>
                   </TouchableOpacity>
@@ -211,7 +222,7 @@ const ProfileScreen = ({ navigation }) => {
             )}
           </View>
 
-          {/* Complete Profile Button - Dynamic margin based on dropdown state */}
+          {/* Complete Profile Button */}
           <TouchableOpacity 
             style={[
               styles.completeButton,
@@ -225,7 +236,7 @@ const ProfileScreen = ({ navigation }) => {
             {loading ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
-              <Text style={styles.completeButtonText}>Complete my profile</Text>
+              <Text style={styles.completeButtonText}>{t('profileScreen.completeButton')}</Text>
             )}
           </TouchableOpacity>
         </View>

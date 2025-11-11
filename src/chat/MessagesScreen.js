@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,18 +13,21 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
+import { useLanguage } from '../context/LanguageContext';
 // Import your existing BottomNav component
 import BottomNav from '../component/BottomNav';
 
 const MessagesScreen = ({ navigation }) => {
-  const currentBooking = {
+  const { currentLanguage, t, formatText, translateDynamic } = useLanguage();
+  
+  const [currentBooking, setCurrentBooking] = useState({
     id: '1',
     name: 'Zen Thai Studio',
     time: '3:00 PM',
     avatar: 'https://via.placeholder.com/60',
-  };
+  });
 
-  const recentChats = [
+  const [recentChats, setRecentChats] = useState([
     {
       id: '1',
       name: 'Zen Thai Studio',
@@ -32,14 +35,91 @@ const MessagesScreen = ({ navigation }) => {
       time: '6:30 A.M',
       avatar: 'https://via.placeholder.com/60',
     },
-  ];
+  ]);
+
+  const [translatedCurrentBooking, setTranslatedCurrentBooking] = useState(currentBooking);
+  const [translatedRecentChats, setTranslatedRecentChats] = useState(recentChats);
+
+  // Translate current booking when language changes
+  useEffect(() => {
+    const translateBooking = async () => {
+      if (currentLanguage === 'th') {
+        const translatedName = await translateDynamic(currentBooking.name);
+        const translatedTime = await translateTime(currentBooking.time);
+        
+        setTranslatedCurrentBooking({
+          ...currentBooking,
+          name: translatedName,
+          time: translatedTime,
+        });
+      } else {
+        setTranslatedCurrentBooking(currentBooking);
+      }
+    };
+
+    translateBooking();
+  }, [currentLanguage, currentBooking]);
+
+  // Translate recent chats when language changes
+  useEffect(() => {
+    const translateChats = async () => {
+      if (currentLanguage === 'th') {
+        const translated = await Promise.all(
+          recentChats.map(async (chat) => {
+            const translatedName = await translateDynamic(chat.name);
+            
+            // Translate message
+            let translatedMessage = chat.message;
+            if (chat.message === 'thank you for book.....') {
+              translatedMessage = t('messages.thankYouForBook');
+            } else {
+              translatedMessage = await translateDynamic(chat.message);
+            }
+
+            // Translate time
+            const translatedTime = await translateTime(chat.time);
+
+            return {
+              ...chat,
+              name: translatedName,
+              message: translatedMessage,
+              time: translatedTime,
+            };
+          })
+        );
+        setTranslatedRecentChats(translated);
+      } else {
+        setTranslatedRecentChats(recentChats);
+      }
+    };
+
+    translateChats();
+  }, [currentLanguage, recentChats]);
+
+  const translateTime = async (time) => {
+    if (currentLanguage === 'th') {
+      // Convert time format (e.g., "3:00 PM" to Thai format)
+      const timeRegex = /(\d+):(\d+)\s*(AM|PM)/i;
+      const match = time.match(timeRegex);
+      
+      if (match) {
+        const [_, hours, minutes, period] = match;
+        const translatedHours = formatText(hours);
+        const translatedMinutes = formatText(minutes);
+        const translatedPeriod = period.toUpperCase() === 'AM' ? 'น.' : 'น.';
+        
+        return `${translatedHours}:${translatedMinutes} ${translatedPeriod}`;
+      }
+    }
+    return time;
+  };
 
   const handleChatPress = (chat) => {
-    // Navigate to chat screen// add configartion according to your api
+    // Navigate to chat screen// add configuration according to your api
     navigation.navigate('chat', {
       conversationId: '60f7b3b3b3b3b3b3b3b3b3b3', // Or null for new conversation
       receiverId: '60f7b3b3b3b3b3b3b3b3b3b4', // User ID from MongoDB
-      receiverName: 'Zen Thai Studio',
+      receiverName: chat.name,
       currentUserId: '60f7b3b3b3b3b3b3b3b3b3b5', // Current logged-in user ID
     });
   };
@@ -56,27 +136,32 @@ const MessagesScreen = ({ navigation }) => {
         style={styles.header}
       >
         <View style={styles.headerContent}>
-         
           <View style={styles.headerTextContainer}>
-            <Text style={styles.headerTitle}>Messages</Text>
+            <Text style={styles.headerTitle}>{t('messages.header')}</Text>
           </View>
         </View>
 
         {/* Current Booking in Header */}
         <View style={styles.currentBookingInHeader}>
-          <Text style={styles.currentBookingLabel}>Current booking -</Text>
+          <Text style={styles.currentBookingLabel}>
+            {t('messages.currentBooking')}
+          </Text>
           <TouchableOpacity
             style={styles.currentBookingRow}
-            onPress={() => handleChatPress(currentBooking)}
+            onPress={() => handleChatPress(translatedCurrentBooking)}
             activeOpacity={0.7}
           >
             <Image
-              source={{ uri: currentBooking.avatar }}
+              source={{ uri: translatedCurrentBooking.avatar }}
               style={styles.currentBookingAvatar}
             />
             <View style={styles.currentBookingTextContainer}>
-              <Text style={styles.currentBookingName}>{currentBooking.name}</Text>
-              <Text style={styles.currentBookingTime}>at {currentBooking.time}</Text>
+              <Text style={styles.currentBookingName}>
+                {translatedCurrentBooking.name}
+              </Text>
+              <Text style={styles.currentBookingTime}>
+                {t('messages.at')} {translatedCurrentBooking.time}
+              </Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -89,8 +174,8 @@ const MessagesScreen = ({ navigation }) => {
       >
         {/* Recent Chats Section */}
         <View style={styles.recentChatsSection}>
-          <Text style={styles.sectionTitle}>Recent Chats -</Text>
-          {recentChats.map((chat) => (
+          <Text style={styles.sectionTitle}>{t('messages.recentChats')}</Text>
+          {translatedRecentChats.map((chat) => (
             <TouchableOpacity
               key={chat.id}
               style={styles.chatItem}
