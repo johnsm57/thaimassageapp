@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
@@ -17,6 +18,7 @@ import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import { useLanguage } from '../context/LanguageContext';
 import BottomNav from '../component/BottomNav';
+import AppTourGuide from'./AppTourGuide';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -31,14 +33,14 @@ const scaleFont = (size) => {
 
 // Card dimensions that adapt to screen
 const getCardWidth = () => {
-  const cardWidth = SCREEN_WIDTH * 0.88; // 88% of screen
-  return Math.min(cardWidth, 400); // Max 400px on tablets
+  const cardWidth = SCREEN_WIDTH * 0.88;
+  return Math.min(cardWidth, 400);
 };
 
 const getCardHeight = () => {
   const cardWidth = getCardWidth();
-  const idealHeight = cardWidth * 1.65; // Maintain aspect ratio
-  const maxHeight = SCREEN_HEIGHT * 0.68; // Max 68% of screen height
+  const idealHeight = cardWidth * 1.65;
+  const maxHeight = SCREEN_HEIGHT * 0.68;
   return Math.min(idealHeight, maxHeight);
 };
 
@@ -51,13 +53,97 @@ const Homescreen = ({ navigation }) => {
   const { currentLanguage, t, formatText, translateDynamic } = useLanguage();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showNotification, setShowNotification] = useState(false);
+  const [notificationType, setNotificationType] = useState('booking'); // 'booking' or 'skip'
   const [userName, setUserName] = useState('User');
   const [translatedUserName, setTranslatedUserName] = useState('User');
   const [translatedStudios, setTranslatedStudios] = useState([]);
+  const [notificationButtonLayout, setNotificationButtonLayout] = useState(null);
+  const [cardLayout, setCardLayout] = useState(null);
   const position = useRef(new Animated.ValueXY()).current;
+  const notificationButtonRef = useRef(null);
+  const cardRef = useRef(null);
+
+  // Define tour steps with swipe demo
+  const tourSteps = [
+    {
+      title: t('tour.welcomeTitle') || 'Welcome!',
+      description: t('tour.welcomeDescription') || 'Let us show you how to find the perfect massage studio.',
+      icon: 'hand-wave',
+      tooltipPosition: {
+        top: verticalScale(150),
+        left: moderateScale(20),
+        right: moderateScale(20),
+      },
+    },
+    {
+      title: t('tour.swipeCardsTitle') || 'Swipe to Explore',
+      description: t('tour.swipeCardsDescription') || 'Swipe right to send a booking request, or swipe left to skip and see the next studio.',
+      icon: 'gesture-swipe',
+      targetPosition: cardLayout,
+      showSwipeDemo: true,
+      tooltipPosition: {
+        top: verticalScale(100),
+        left: moderateScale(20),
+        right: moderateScale(20),
+      },
+      arrowDirection: 'bottom',
+    },
+    {
+      title: t('tour.notificationsTitle') || 'Notifications',
+      description: t('tour.notificationsDescription') || 'Check your booking confirmations and studio messages here.',
+      icon: 'bell',
+      targetPosition: notificationButtonLayout,
+      tooltipPosition: {
+        top: notificationButtonLayout ? notificationButtonLayout.top + moderateScale(70) : verticalScale(150),
+        left: moderateScale(20),
+        right: moderateScale(20),
+      },
+      arrowDirection: 'top',
+    },
+    {
+      title: t('tour.chatTitle') || 'Chat',
+      description: t('tour.chatDescription') || 'Message parlors directly to ask questions or confirm bookings.',
+      icon: 'chat',
+      targetPosition: {
+        top: SCREEN_HEIGHT - moderateScale(80),
+        left: SCREEN_WIDTH / 2 - moderateScale(80),
+        width: moderateScale(60),
+        height: moderateScale(60),
+        borderRadius: moderateScale(30),
+      },
+      tooltipPosition: {
+        bottom: moderateScale(160),
+        left: moderateScale(20),
+        right: moderateScale(20),
+      },
+      arrowDirection: 'bottom',
+    },
+    {
+      title: t('tour.profileTitle') || 'Profile',
+      description: t('tour.profileDescription') || 'Access your bookings, preferences, and account settings.',
+      icon: 'account',
+      targetPosition: {
+        top: SCREEN_HEIGHT - moderateScale(80),
+        left: SCREEN_WIDTH - moderateScale(90),
+        width: moderateScale(60),
+        height: moderateScale(60),
+        borderRadius: moderateScale(30),
+      },
+      tooltipPosition: {
+        bottom: moderateScale(160),
+        left: moderateScale(20),
+        right: moderateScale(20),
+      },
+      arrowDirection: 'bottom',
+    },
+  ];
 
   useEffect(() => {
     fetchUserName();
+    setTimeout(() => {
+      measureNotificationButton();
+      measureCard();
+    }, 500);
   }, []);
 
   useEffect(() => {
@@ -143,6 +229,34 @@ const Homescreen = ({ navigation }) => {
     }
   };
 
+  const measureNotificationButton = () => {
+    if (notificationButtonRef.current) {
+      notificationButtonRef.current.measure((x, y, width, height, pageX, pageY) => {
+        setNotificationButtonLayout({
+          top: pageY,
+          left: pageX,
+          width: width,
+          height: height,
+          borderRadius: moderateScale(12),
+        });
+      });
+    }
+  };
+
+  const measureCard = () => {
+    if (cardRef.current) {
+      cardRef.current.measure((x, y, width, height, pageX, pageY) => {
+        setCardLayout({
+          top: pageY,
+          left: pageX,
+          width: width,
+          height: height,
+          borderRadius: moderateScale(48),
+        });
+      });
+    }
+  };
+
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
@@ -163,6 +277,7 @@ const Homescreen = ({ navigation }) => {
       duration: 250, 
       useNativeDriver: false 
     }).start(() => {
+      setNotificationType('booking');
       setShowNotification(true);
       setTimeout(() => setShowNotification(false), 2000);
       nextCard();
@@ -174,7 +289,12 @@ const Homescreen = ({ navigation }) => {
       toValue: { x: -SCREEN_WIDTH - 100, y: 0 }, 
       duration: 250, 
       useNativeDriver: false 
-    }).start(() => nextCard());
+    }).start(() => {
+      setNotificationType('skip');
+      setShowNotification(true);
+      setTimeout(() => setShowNotification(false), 1500);
+      nextCard();
+    });
   };
   
   const resetPosition = () => {
@@ -188,6 +308,10 @@ const Homescreen = ({ navigation }) => {
     const studiosToUse = translatedStudios.length > 0 ? translatedStudios : studios;
     setCurrentIndex((p) => (p + 1) % studiosToUse.length); 
     position.setValue({ x: 0, y: 0 }); 
+  };
+
+  const handleTourComplete = () => {
+    console.log('Tour completed!');
   };
 
   const renderBackgroundCards = () => (
@@ -213,13 +337,48 @@ const Homescreen = ({ navigation }) => {
       { translateY: -CARD_RAISE },
     ];
 
+    const rotate = position.x.interpolate({
+      inputRange: [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2],
+      outputRange: ['-10deg', '0deg', '10deg'],
+      extrapolate: 'clamp',
+    });
+
+    const likeOpacity = position.x.interpolate({
+      inputRange: [0, SWIPE_THRESHOLD],
+      outputRange: [0, 1],
+      extrapolate: 'clamp',
+    });
+
+    const nopeOpacity = position.x.interpolate({
+      inputRange: [-SWIPE_THRESHOLD, 0],
+      outputRange: [1, 0],
+      extrapolate: 'clamp',
+    });
+
     return (
       <Animated.View
         key={studio.id}
-        style={[styles.cardContainer, { transform: combinedTransforms }]}
+        ref={index === 0 ? cardRef : null}
+        style={[
+          styles.cardContainer, 
+          { 
+            transform: [...combinedTransforms, { rotate }]
+          }
+        ]}
         {...panResponder.panHandlers}
       >
         <LinearGradient colors={['#FFFFFF', '#EDCFC9']} style={styles.card}>
+          {/* Swipe indicators on card */}
+          <Animated.View style={[styles.swipeIndicator, styles.likeIndicator, { opacity: likeOpacity }]}>
+            <Icon name="check-circle" size={moderateScale(60)} color="#51CF66" />
+            <Text style={[styles.swipeIndicatorText, { color: '#51CF66' }]}>BOOK</Text>
+          </Animated.View>
+
+          <Animated.View style={[styles.swipeIndicator, styles.nopeIndicator, { opacity: nopeOpacity }]}>
+            <Icon name="close-circle" size={moderateScale(60)} color="#FF6B6B" />
+            <Text style={[styles.swipeIndicatorText, { color: '#FF6B6B' }]}>SKIP</Text>
+          </Animated.View>
+
           <View style={styles.imageContainer}>
             <View style={styles.imagePlaceholder}>
               <View style={styles.placeholderContent}>
@@ -272,6 +431,10 @@ const Homescreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#EDE2E0" />
+      
+      {/* App Tour Guide */}
+      <AppTourGuide tourSteps={tourSteps} onComplete={handleTourComplete} />
+
       <View style={styles.header}>
         <View style={styles.userBadge}>
           <Text style={styles.userName} numberOfLines={1}>
@@ -279,6 +442,7 @@ const Homescreen = ({ navigation }) => {
           </Text>
         </View>
         <TouchableOpacity 
+          ref={notificationButtonRef}
           style={styles.notificationButton}
           onPress={() => navigation.navigate('notifications')}
         >
@@ -286,11 +450,21 @@ const Homescreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
+      {/* Enhanced notification feedback */}
       {showNotification && (
-        <View style={styles.notification}>
-          <Icon name="check" size={moderateScale(18)} color="#D96073" style={styles.checkIcon} />
-          <Text style={styles.notificationText}>{t('home.bookingRequestSent')}</Text>
-        </View>
+        <Animated.View style={styles.notification}>
+          <Icon 
+            name={notificationType === 'booking' ? "check-circle" : "close-circle"} 
+            size={moderateScale(20)} 
+            color={notificationType === 'booking' ? "#51CF66" : "#FF6B6B"} 
+            style={styles.notificationIcon} 
+          />
+          <Text style={styles.notificationText}>
+            {notificationType === 'booking' 
+              ? t('home.bookingRequestSent') || 'Booking request sent!' 
+              : t('home.studioSkipped') || 'Studio skipped'}
+          </Text>
+        </Animated.View>
       )}
 
       <View style={styles.cardsContainer}>
@@ -341,22 +515,27 @@ const styles = StyleSheet.create({
   notification: { 
     flexDirection: 'row', 
     alignItems: 'center', 
-    backgroundColor: '#E8C4CC', 
+    backgroundColor: '#FFFFFF', 
     marginHorizontal: moderateScale(40), 
     marginTop: moderateScale(8), 
     marginBottom: moderateScale(8), 
-    paddingVertical: moderateScale(10), 
+    paddingVertical: moderateScale(12), 
     paddingHorizontal: moderateScale(20), 
     borderRadius: moderateScale(20), 
-    alignSelf: 'center' 
+    alignSelf: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  checkIcon: { 
-    marginRight: moderateScale(8) 
+  notificationIcon: { 
+    marginRight: moderateScale(10) 
   },
   notificationText: { 
     fontSize: scaleFont(14), 
-    color: '#D96073', 
-    fontWeight: '700' 
+    color: '#3D2C2C', 
+    fontWeight: '600' 
   },
 
   cardsContainer: { 
@@ -413,6 +592,26 @@ const styles = StyleSheet.create({
     flex: 1, 
     borderRadius: moderateScale(48), 
     overflow: 'hidden' 
+  },
+  swipeIndicator: {
+    position: 'absolute',
+    top: moderateScale(80),
+    zIndex: 100,
+    alignItems: 'center',
+  },
+  likeIndicator: {
+    right: moderateScale(30),
+  },
+  nopeIndicator: {
+    left: moderateScale(30),
+  },
+  swipeIndicatorText: {
+    fontSize: scaleFont(24),
+    fontWeight: '800',
+    marginTop: moderateScale(8),
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   imageContainer: { 
     height: '67%', 

@@ -89,7 +89,7 @@ const Login = ({ navigation }) => {
     return emailRegex.test(email);
   };
 
-  // Save user data to Firestore (for Google Sign-In)
+  // Save user data to Firestore (for Google Sign-In) - UPDATED to preserve existing name
   const saveUserToFirestore = async (userId, userData) => {
     try {
       console.log('Saving user data to Firestore:', { userId, userData });
@@ -101,20 +101,27 @@ const Login = ({ navigation }) => {
         .get();
 
       if (userDoc.exists) {
-        // User exists, update with merge
+        // User exists - ONLY update email and photoURL, preserve existing name
+        const existingData = userDoc.data();
+        console.log('Existing user data:', existingData);
+        
         await firestore()
           .collection('Useraccount')
           .doc(userId)
           .set({
-            name: userData.name || userDoc.data().name || '',
-            email: userData.email || userDoc.data().email || '',
-            photoURL: userData.photoURL || userDoc.data().photoURL || '',
+            // Preserve existing name if it exists, otherwise use Google name
+            name: existingData.name || userData.name || '',
+            email: userData.email || existingData.email || '',
+            photoURL: userData.photoURL || existingData.photoURL || '',
+            // Preserve existing gender and location
+            gender: existingData.gender || '',
+            location: existingData.location || '',
             updatedAt: firestore.FieldValue.serverTimestamp(),
           }, { merge: true });
         
-        console.log('Existing user data updated in Firestore');
+        console.log('Existing user data updated in Firestore (name preserved)');
       } else {
-        // New user, create document
+        // New user, create document with Google name (will be updated in profile screen)
         await firestore()
           .collection('Useraccount')
           .doc(userId)
@@ -223,7 +230,7 @@ const Login = ({ navigation }) => {
     }
   };
 
-  // Google Sign-In function with Firestore save
+  // Google Sign-In function with Firestore save and proper navigation
   const signInWithGoogle = async () => {
     try {
       setGoogleLoading(true);
@@ -262,6 +269,7 @@ const Login = ({ navigation }) => {
       
       console.log('Firebase authentication successful:', userCredential.user);
       
+      // Save/update user data - this will preserve existing name for returning users
       const saveResult = await saveUserToFirestore(userCredential.user.uid, {
         name: user?.name || user?.givenName || userCredential.user.displayName || '',
         email: user?.email || userCredential.user.email || '',
@@ -274,13 +282,20 @@ const Login = ({ navigation }) => {
         console.error('Failed to save user to Firestore, but authentication was successful');
       }
       
+      // Check profile completeness and navigate accordingly
       const profileStatus = await checkUserProfile(userCredential.user.uid);
 
       if (profileStatus.complete) {
+        // Profile is complete - navigate to Home
+        console.log('Profile complete - navigating to Home');
         navigation.navigate('Home');
       } else if (profileStatus.needsProfile) {
-        navigation.navigate('Home');
+        // Missing name/gender - navigate to profile
+        console.log('Profile incomplete - navigating to profile');
+        navigation.navigate('profile');
       } else if (profileStatus.needsLocation) {
+        // Missing location - navigate to location
+        console.log('Location missing - navigating to location');
         navigation.navigate('location');
       }
       

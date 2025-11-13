@@ -78,67 +78,67 @@ const LocationScreen = ({ navigation }) => {
   };
 
   // Save location to Firestore
-  const saveUserLocation = async () => {
-    // Validate location selection
-    if (!location) {
-      setErrorMessage('Please select a location');
+ const saveUserLocation = async () => {
+  // Validate location selection
+  if (!location) {
+    setErrorMessage('Please select a location');
+    return;
+  }
+
+  setLoading(true);
+  setErrorMessage('');
+
+  try {
+    // Get current user
+    const currentUser = auth().currentUser;
+
+    if (!currentUser) {
+      setErrorMessage('No user logged in');
+      setLoading(false);
+      Alert.alert('Error', 'No user logged in');
       return;
     }
 
-    setLoading(true);
-    setErrorMessage('');
+    const userId = currentUser.uid;
 
-    try {
-      // Get current user
-      const currentUser = auth().currentUser;
+    // Update user document in Firestore with location
+    await firestore()
+      .collection('Useraccount')
+      .doc(userId)
+      .set(
+        {
+          location: location, // Store the English value for consistency
+          updatedAt: firestore.FieldValue.serverTimestamp(),
+          locationCompleted: true,
+        },
+        { merge: true }
+      );
 
-      if (!currentUser) {
-        setErrorMessage('No user logged in');
-        setLoading(false);
-        Alert.alert('Error', 'No user logged in');
-        return;
-      }
+    console.log('User location saved successfully!');
 
-      const userId = currentUser.uid;
+    // Navigate to Home instead of login
+    navigation.navigate('Home');
 
-      // Update user document in Firestore with location
-      await firestore()
-        .collection('Useraccount')
-        .doc(userId)
-        .set(
-          {
-            location: location, // Store the English value for consistency
-            updatedAt: firestore.FieldValue.serverTimestamp(),
-            locationCompleted: true,
-          },
-          { merge: true }
-        );
-
-      console.log('User location saved successfully!');
-
-      // Navigate directly to Home without alert
-      navigation.navigate('login');
-
-    } catch (error) {
-      console.error('Error saving user location:', error);
-      
-      let errorMsg = 'Failed to save location. Please try again.';
-      
-      if (error.code === 'firestore/permission-denied') {
-        errorMsg = 'Permission denied. Please check your account.';
-      } else if (error.code === 'firestore/unavailable') {
-        errorMsg = 'Network error. Please check your connection.';
-      } else if (error.code === 'firestore/not-found') {
-        errorMsg = 'Profile not found. Please contact support.';
-      }
-      
-      setErrorMessage(errorMsg);
-      Alert.alert('Error', errorMsg);
-      
-    } finally {
-      setLoading(false);
+  } catch (error) {
+    console.error('Error saving user location:', error);
+    
+    let errorMsg = 'Failed to save location. Please try again.';
+    
+    if (error.code === 'firestore/permission-denied') {
+      errorMsg = 'Permission denied. Please check your account.';
+    } else if (error.code === 'firestore/unavailable') {
+      errorMsg = 'Network error. Please check your connection.';
+    } else if (error.code === 'firestore/not-found') {
+      errorMsg = 'Profile not found. Please contact support.';
     }
-  };
+    
+    setErrorMessage(errorMsg);
+    Alert.alert('Error', errorMsg);
+    
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <View style={styles.container}>

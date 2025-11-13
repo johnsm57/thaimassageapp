@@ -89,29 +89,93 @@ const Signup = ({ navigation }) => {
     return emailRegex.test(email);
   };
 
-  // Save user data to Firestore
-  const saveUserToFirestore = async (userId, userData) => {
+  // Save user data to Firestore - UPDATED to preserve existing name
+  const saveUserToFirestore = async (userId, userData, isExistingUser = false) => {
     try {
-      console.log('Saving user data to Firestore:', { userId, userData });
+      console.log('Saving user data to Firestore:', { userId, userData, isExistingUser });
       
-      await firestore()
-        .collection('Useraccount')
-        .doc(userId)
-        .set({
-          name: userData.name || '',
-          email: userData.email || '',
-          gender: userData.gender || '',
-          location: userData.location || '',
-          photoURL: userData.photoURL || '',
-          createdAt: firestore.FieldValue.serverTimestamp(),
-          updatedAt: firestore.FieldValue.serverTimestamp(),
-        }, { merge: true });
+      if (isExistingUser) {
+        // Existing user - fetch current data and preserve name
+        const userDoc = await firestore()
+          .collection('Useraccount')
+          .doc(userId)
+          .get();
+        
+        const existingData = userDoc.exists ? userDoc.data() : {};
+        
+        await firestore()
+          .collection('Useraccount')
+          .doc(userId)
+          .set({
+            // Preserve existing name, otherwise use Google name (will be overwritten in profile screen)
+            name: existingData.name || userData.name || '',
+            email: userData.email || existingData.email || '',
+            photoURL: userData.photoURL || existingData.photoURL || '',
+            // Preserve existing gender and location
+            gender: existingData.gender || '',
+            location: existingData.location || '',
+            updatedAt: firestore.FieldValue.serverTimestamp(),
+          }, { merge: true });
+        
+        console.log('Existing user data updated (name preserved)');
+      } else {
+        // New user - create with empty name (will be filled in profile screen)
+        await firestore()
+          .collection('Useraccount')
+          .doc(userId)
+          .set({
+            name: '', // Leave empty for new users - will be filled in profile screen
+            email: userData.email || '',
+            gender: userData.gender || '',
+            location: userData.location || '',
+            photoURL: userData.photoURL || '',
+            createdAt: firestore.FieldValue.serverTimestamp(),
+            updatedAt: firestore.FieldValue.serverTimestamp(),
+          }, { merge: true });
+        
+        console.log('New user data saved successfully to Firestore');
+      }
       
-      console.log('User data saved successfully to Firestore');
       return { success: true };
     } catch (error) {
       console.error('Error saving user to Firestore:', error);
       return { success: false, error: error.message };
+    }
+  };
+
+  // Check if user profile is complete
+  const checkUserProfile = async (userId) => {
+    try {
+      const userDoc = await firestore()
+        .collection('Useraccount')
+        .doc(userId)
+        .get();
+
+      if (userDoc.exists) {
+        const userData = userDoc.data();
+        
+        if (!userData) {
+          console.log('User document exists but data is undefined');
+          return { complete: false, needsLocation: false, needsProfile: true };
+        }
+        
+        console.log('User profile data:', userData);
+        
+        // Check if all required fields are present
+        if (userData.name && userData.gender && userData.location) {
+          return { complete: true, needsLocation: false, needsProfile: false };
+        } else if (userData.name && userData.gender) {
+          return { complete: false, needsLocation: true, needsProfile: false };
+        } else {
+          return { complete: false, needsLocation: false, needsProfile: true };
+        }
+      } else {
+        console.log('User document does not exist');
+        return { complete: false, needsLocation: false, needsProfile: true };
+      }
+    } catch (error) {
+      console.error('Error checking user profile:', error);
+      return { complete: false, needsLocation: false, needsProfile: true };
     }
   };
 
@@ -201,7 +265,7 @@ const Signup = ({ navigation }) => {
     }
   };
 
-  // Google Sign-In function with Firestore save
+  // Google Sign-In function with Firestore save and proper navigation
   const signInWithGoogle = async () => {
     try {
       setGoogleLoading(true);
@@ -240,19 +304,57 @@ const Signup = ({ navigation }) => {
       
       console.log('Firebase authentication successful:', userCredential.user);
       
-      const saveResult = await saveUserToFirestore(userCredential.user.uid, {
-        name: user?.name || user?.givenName || userCredential.user.displayName || '',
-        email: user?.email || userCredential.user.email || '',
-        gender: '',
-        location: '',
-        photoURL: user?.photo || userCredential.user.photoURL || '',
-      });
+      // Check if user document exists in Firestore BEFORE saving
+      const userDocBefore = await firestore()
+        .collection('Useraccount')
+        .doc(userCredential.user.uid)
+        .get();
+      
+      const isExistingUser = userDocBefore.exists;
+      
+      console.log('Is existing user:', isExistingUser);
+      
+      // Save or update user data - pass isExistingUser flag
+      const saveResult = await saveUserToFirestore(
+        userCredential.user.uid,
+        {
+          name: user?.name || user?.givenName || userCredential.user.displayName || '',
+          email: user?.email || userCredential.user.email || '',
+          gender: '',
+          location: '',
+          photoURL: user?.photo || userCredential.user.photoURL || '',
+        },
+        isExistingUser
+      );
       
       if (!saveResult.success) {
         console.error('Failed to save user to Firestore, but authentication was successful');
       }
       
-      navigation.navigate('Home');
+      // Navigate based on whether user is new or existing
+      if (!isExistingUser) {
+        // New user - navigate to profile screen
+        console.log('New user detected - navigating to profile');
+        navigation.navigate('profile');
+      } else {
+        // Existing user - check profile completeness
+        console.log('Existing user detected - checking profile completeness');
+        const profileStatus = await checkUserProfile(userCredential.user.uid);
+        
+        if (profileStatus.complete) {
+          // Profile complete - go to Home
+          console.log('Profile complete - navigating to Home');
+          navigation.navigate('Home');
+        } else if (profileStatus.needsProfile) {
+          // Missing name/gender - go to profile
+          console.log('Profile incomplete - navigating to profile');
+          navigation.navigate('profile');
+        } else if (profileStatus.needsLocation) {
+          // Missing location - go to location
+          console.log('Location missing - navigating to location');
+          navigation.navigate('location');
+        }
+      }
       
     } catch (error) {
       console.error('Google Sign-In Error:', error);
