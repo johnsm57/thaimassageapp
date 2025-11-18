@@ -1,7 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import { View, TouchableOpacity, Text, StyleSheet, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -22,8 +20,15 @@ const BottomNav = ({ navigation, active = 'home', bottomOffset = 18, fixedBottom
           activeOpacity={0.8}
           onPress={() => navigation?.navigate?.('Home')}
         >
-          <View style={active === 'home' ? styles.navButtonActive : null}>
-            <Icon name="home" size={20} color={active === 'home' ? '#C97B84' : '#E5BDC0'} />
+          <View style={active === 'home' ? styles.navButtonActive : styles.navButtonInactive}>
+            <Image
+              source={require('../assets/home.png')}
+              style={[
+                styles.navIcon,
+                { tintColor: active === 'home' ? '#C97B84' : '#E5BDC0' }
+              ]}
+              resizeMode="contain"
+            />
             {active === 'home' && <Text style={styles.navTextActive}>{t('bottomNav.home')}</Text>}
           </View>
         </TouchableOpacity>
@@ -33,8 +38,15 @@ const BottomNav = ({ navigation, active = 'home', bottomOffset = 18, fixedBottom
           activeOpacity={0.8}
           onPress={() => navigation?.navigate?.('massage')}
         >
-          <View style={active === 'messages' ? styles.navButtonActive : null}>
-            <Ionicons name="chatbubble-outline" size={20} color={active === 'messages' ? '#C97B84' : '#E5BDC0'} />
+          <View style={active === 'messages' ? styles.navButtonActive : styles.navButtonInactive}>
+            <Image
+              source={require('../assets/chat.png')}
+              style={[
+                styles.navIcon,
+                { tintColor: active === 'messages' ? '#C97B84' : '#E5BDC0' }
+              ]}
+              resizeMode="contain"
+            />
             {active === 'messages' && <Text style={styles.navTextActive}>{t('bottomNav.chat')}</Text>}
           </View>
         </TouchableOpacity>
@@ -44,9 +56,16 @@ const BottomNav = ({ navigation, active = 'home', bottomOffset = 18, fixedBottom
           activeOpacity={0.8}
           onPress={() => navigation?.navigate?.('setting')}
         >
-          <View style={active === 'setting' ? styles.profileActive : null}>
-            <Icon name="account-outline" size={20} color={active === 'setting' ? '#C97B84' : '#E5BDC0'} />
-            {active === 'setting' && <Text style={styles.profileLabel}>{t('bottomNav.setting')}</Text>}
+          <View style={active === 'profile' ? styles.profileActive : styles.navButtonInactive}>
+            <Image
+              source={require('../assets/profile.png')}
+              style={[
+                styles.navIcon,
+                { tintColor: active === 'profile' ? '#C97B84' : '#E5BDC0' }
+              ]}
+              resizeMode="contain"
+            />
+            {active === 'profile' && <Text style={styles.profileLabel}>{t('bottomNav.profile')}</Text>}
           </View>
         </TouchableOpacity>
       </View>
@@ -89,6 +108,15 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
   },
+  navIcon: {
+    width: 20,
+    height: 20,
+  },
+  navButtonInactive: {
+    // No background, just icon
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   navButtonActive: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -97,7 +125,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 17,
     gap: 6,
-    height: 54,
+    height: 50,
   },
   navTextActive: {
     fontSize: 13,
@@ -113,11 +141,11 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 17,
     gap: 6,
-    height: 54,
+    height: 50,
   },
   profileLabel: {
     marginLeft: 6,
-    fontSize: 12,
+    fontSize: 13,
     color: '#C97B84',
     fontWeight: '600',
   },

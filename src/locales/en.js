@@ -48,7 +48,7 @@ export default {
     loadFailed: 'Failed to load user data',
     languageUpdateFailed: 'Failed to update language type. Please try again.',
   },
-   home: {
+  home: {
     greeting: '👋🏼',
     bookingRequestSent: 'Booking request sent',
     studioImage: 'Studio Image',
@@ -59,14 +59,14 @@ export default {
     noNotifications: 'No notifications',
     yourMassageBooked: 'your massage have been booked',
   },
-    messages: {
+  messages: {
     header: 'Messages',
     currentBooking: 'Current booking -',
     at: 'at',
     recentChats: 'Recent Chats -',
     thankYouForBook: 'thank you for book.....',
   },
-   chat: {
+  chat: {
     typing: 'Typing...',
     activeNow: 'Active now 🟢',
     offline: 'Offline',
@@ -77,7 +77,7 @@ export default {
     enterMessage: 'Enter your message...',
     messageSendFailed: 'Failed to send message. Please try again.',
   },
-   login: {
+  login: {
     back: 'Back',
     welcomeBack: 'Welcome Back !',
     subtitle: "let's get you back to effortless\nmassage booking...",
@@ -97,7 +97,6 @@ export default {
     ok: 'OK',
     passwordResetFailed: 'Failed to send password reset email.',
     noAccountFound: 'No account found with this email address.',
-    // Error messages
     enterEmailError: 'Please enter your email address',
     validEmailError: 'Please enter a valid email address',
     enterPasswordError: 'Please enter your password',
@@ -126,7 +125,6 @@ export default {
     orSignUpWith: 'or sign up with',
     signUpWithGoogle: 'create account with google',
     signingIn: 'Signing in...',
-    // Error messages
     enterEmailError: 'Please enter your email address',
     validEmailError: 'Please enter a valid email address',
     enterPasswordError: 'Please enter a password',
@@ -148,7 +146,7 @@ export default {
     operationNotAllowedGoogle: 'Google Sign-In is not enabled. Please contact support.',
     configurationNotFound: 'Google Sign-In configuration not found. Please contact support.',
   },
-   profileScreen: {
+  profileScreen: {
     back: 'Back',
     title: 'Complete your profile',
     subtitle: 'To get you the best matches please\nenter below details...',
@@ -157,7 +155,6 @@ export default {
     male: 'Male',
     female: 'Female',
     completeButton: 'Complete my profile',
-    // Error messages
     enterNameError: 'Please enter your name',
     selectGenderError: 'Please select your gender',
     noUserLoggedIn: 'No user is logged in. Please sign up first.',
@@ -166,42 +163,42 @@ export default {
     networkError: 'Network error. Please check your internet connection.',
     error: 'Error',
   },
-    otp: {
+  otp: {
     back: 'Back',
     title: "Let's verify your email",
     subtitle: 'Enter the 4-digit code we have sent you to\nyour email address',
     verifyButton: 'Verify my email',
   },
-   locations: {
-      sukhumvit: 'Sukhumvit',
-      silom: 'Silom',
-      siam: 'Siam',
-      chatuchak: 'Chatuchak',
-      thonglor: 'Thonglor',
-      ekkamai: 'Ekkamai',
-      phromPhong: 'Phrom Phong',
-      asok: 'Asok',
-      sathorn: 'Sathorn',
-      lumpini: 'Lumpini',
-      ratchathewi: 'Ratchathewi',
-      phayaThai: 'Phaya Thai',
-      dusit: 'Dusit',
-      bangsue: 'Bangsue',
-      huaiKhwang: 'Huai Khwang',
-      wangThonglang: 'Wang Thonglang',
-      latPhrao: 'Lat Phrao',
-      khlongToei: 'Khlong Toei',
-      watthana: 'Watthana',
-      bangRak: 'Bang Rak',
-       "title": "Complete your profile",
-    "subtitle": "To get you the best matches please enter your location...",
-    "selectLocation": "Select your location",
-    "completeButton": "Complete my profile",
-    "back": "Back",
-    },
-     bottomNav: {
+  locations: {
+    sukhumvit: 'Sukhumvit',
+    silom: 'Silom',
+    siam: 'Siam',
+    chatuchak: 'Chatuchak',
+    thonglor: 'Thonglor',
+    ekkamai: 'Ekkamai',
+    phromPhong: 'Phrom Phong',
+    asok: 'Asok',
+    sathorn: 'Sathorn',
+    lumpini: 'Lumpini',
+    ratchathewi: 'Ratchathewi',
+    phayaThai: 'Phaya Thai',
+    dusit: 'Dusit',
+    bangsue: 'Bangsue',
+    huaiKhwang: 'Huai Khwang',
+    wangThonglang: 'Wang Thonglang',
+    latPhrao: 'Lat Phrao',
+    khlongToei: 'Khlong Toei',
+    watthana: 'Watthana',
+    bangRak: 'Bang Rak',
+    title: "Complete your profile",
+    subtitle: "To get you the best matches please enter your location...",
+    selectLocation: "Select your location",
+    completeButton: "Complete my profile",
+    back: "Back",
+  },
+  bottomNav: {
     home: 'Home',
     chat: 'Chat',
-    setting: 'setting',
+    profile: 'Profile',
   },
 };

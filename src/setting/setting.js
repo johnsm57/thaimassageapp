@@ -15,6 +15,8 @@ import {
   Platform,
   PixelRatio,
   Image,
+  PermissionsAndroid,
+  Linking,
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Feather from 'react-native-vector-icons/Feather';
@@ -26,6 +28,8 @@ import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 import storage from '@react-native-firebase/storage';
 import { launchImageLibrary } from 'react-native-image-picker';
+import Geolocation from 'react-native-geolocation-service';
+import { reverseGeocode } from '../context/geocodingService';
 import { useLanguage } from '../context/LanguageContext';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -48,7 +52,7 @@ const verticalScale = (size) => {
 };
 
 const moderateScale = (size, factor = 0.5) => {
-  if (isTablet) factor = 0.3; // Less scaling on tablets
+  if (isTablet) factor = 0.3;
   return size + (scale(size) - size) * factor;
 };
 
@@ -92,34 +96,76 @@ const PROFILE_CARD_HEIGHT = isTablet
   : verticalScale(140);
 
 const ProfileRow = ({ label, value, onPress, t, formatText, isNumeric = false, fieldType = 'text' }) => {
-  const [translatedValue, setTranslatedValue] = useState(value || label);
+  const [translatedValue, setTranslatedValue] = useState(label);
   const { currentLanguage, translateDynamic } = useLanguage();
 
   useEffect(() => {
     const loadTranslation = async () => {
-      if (!value) {
+      // If no value, show label
+      if (!value || (typeof value === 'object' && Object.keys(value).length === 0)) {
         setTranslatedValue(label);
         return;
       }
 
-      if (value === 'Male' || value === 'Female') {
-        setTranslatedValue(t(`genderValues.${value}`));
-      } else if (isNumeric) {
-        setTranslatedValue(formatText(value));
-      } else if (fieldType === 'location' || fieldType === 'name') {
-        if (currentLanguage === 'th') {
-          const translated = await translateDynamic(value);
-          setTranslatedValue(translated);
-        } else {
-          setTranslatedValue(value);
+      try {
+        // Handle location object with coordinates and city name
+        if (fieldType === 'location') {
+          if (typeof value === 'object' && value !== null && 'latitude' in value && 'longitude' in value) {
+            // If city name exists, show it with emoji
+            if (value.city) {
+              setTranslatedValue(`📍 ${value.city}`);
+            } else {
+              // Fallback to coordinates if no city name
+              const locationText = `${Number(value.latitude).toFixed(4)}°, ${Number(value.longitude).toFixed(4)}°`;
+              setTranslatedValue(locationText);
+            }
+          } else if (typeof value === 'string') {
+            // Old format: string location
+            if (currentLanguage === 'th') {
+              const translated = await translateDynamic(value);
+              setTranslatedValue(translated);
+            } else {
+              setTranslatedValue(value);
+            }
+          } else {
+            setTranslatedValue(label);
+          }
+          return;
         }
-      } else {
-        setTranslatedValue(value);
+
+        // Handle gender values
+        if (value === 'Male' || value === 'Female') {
+          setTranslatedValue(t(`genderValues.${value}`));
+          return;
+        }
+
+        // Handle numeric values
+        if (isNumeric) {
+          setTranslatedValue(formatText(value));
+          return;
+        }
+
+        // Handle name field
+        if (fieldType === 'name') {
+          if (currentLanguage === 'th') {
+            const translated = await translateDynamic(value);
+            setTranslatedValue(translated);
+          } else {
+            setTranslatedValue(value);
+          }
+          return;
+        }
+
+        // Default: convert to string safely
+        setTranslatedValue(String(value));
+      } catch (error) {
+        console.error('Error translating value:', error);
+        setTranslatedValue(label);
       }
     };
 
     loadTranslation();
-  }, [value, currentLanguage, fieldType]);
+  }, [value, currentLanguage, fieldType, label]);
 
   return (
     <TouchableOpacity activeOpacity={0.8} onPress={onPress} style={styles.row}>
@@ -150,6 +196,8 @@ const Setting = ({ navigation }) => {
   const [translatedName, setTranslatedName] = useState('');
   const [profileImage, setProfileImage] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [fetchingLocation, setFetchingLocation] = useState(false);
+  const [tempLocation, setTempLocation] = useState(null);
 
   useEffect(() => {
     fetchUserData();
@@ -282,10 +330,178 @@ const Setting = ({ navigation }) => {
     }
   };
 
+  // Request location permission
+  const requestLocationPermission = async () => {
+    if (Platform.OS === 'ios') {
+      try {
+        const auth = await Geolocation.requestAuthorization('whenInUse');
+        console.log('iOS Location auth:', auth);
+        
+        if (auth === 'granted') {
+          return true;
+        } else {
+          Alert.alert(
+            'Location Permission Required',
+            'Please enable location permissions in Settings.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Open Settings', onPress: () => Linking.openSettings() }
+            ]
+          );
+          return false;
+        }
+      } catch (error) {
+        console.error('iOS permission error:', error);
+        return false;
+      }
+    }
+
+    // Android
+    try {
+      const alreadyGranted = await PermissionsAndroid.check(
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+      );
+
+      if (alreadyGranted) {
+        return true;
+      }
+
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+        {
+          title: 'Location Permission',
+          message: 'This app needs access to your location.',
+          buttonPositive: 'OK',
+        }
+      );
+
+      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+        return true;
+      } else if (granted === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN || granted === 'never_ask_again') {
+        Alert.alert(
+          'Location Permission Blocked',
+          'Please enable location permission in Settings.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Open Settings', onPress: () => Linking.openSettings() }
+          ]
+        );
+        return false;
+      }
+      return false;
+    } catch (err) {
+      console.error('Android permission error:', err);
+      return false;
+    }
+  };
+
+  // Get user's current GPS location with reverse geocoding
+  const getUserLocation = async () => {
+    setFetchingLocation(true);
+
+    try {
+      const hasPermission = await requestLocationPermission();
+
+      if (!hasPermission) {
+        setFetchingLocation(false);
+        return;
+      }
+
+      Geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude, accuracy } = position.coords;
+          
+          console.log('🔍 Fetching location name from coordinates...');
+          
+          // Get city name from coordinates
+          const geocodeResult = await reverseGeocode(latitude, longitude);
+          
+          if (geocodeResult) {
+            console.log('✅ Location name:', geocodeResult.city);
+            
+            setTempLocation({
+              latitude,
+              longitude,
+              accuracy,
+              city: geocodeResult.city,
+              country: geocodeResult.country,
+              fullAddress: geocodeResult.fullAddress,
+            });
+
+            Alert.alert(
+              '✅ Success',
+              `Location detected!\n📍 ${geocodeResult.city}, ${geocodeResult.country}`
+            );
+          } else {
+            console.log('⚠️ Could not get location name, using coordinates only');
+            
+            setTempLocation({
+              latitude,
+              longitude,
+              accuracy,
+            });
+
+            Alert.alert(
+              '✅ Location Detected',
+              `Lat: ${latitude.toFixed(6)}\nLong: ${longitude.toFixed(6)}`
+            );
+          }
+
+          console.log('Location fetched successfully');
+          setFetchingLocation(false);
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+          setFetchingLocation(false);
+          
+          let errorMsg = 'Failed to get location. Please try again.';
+          
+          switch (error.code) {
+            case 1:
+              errorMsg = 'Location permission denied. Please enable it in Settings.';
+              break;
+            case 2:
+              errorMsg = 'Location unavailable. Please check your GPS settings.';
+              break;
+            case 3:
+              errorMsg = 'Location request timed out. Please try again.';
+              break;
+          }
+          
+          Alert.alert('Location Error', errorMsg);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 20000,
+          maximumAge: 0,
+          forceRequestLocation: true,
+          showLocationDialog: true,
+        }
+      );
+    } catch (error) {
+      console.error('Error getting location:', error);
+      setFetchingLocation(false);
+      Alert.alert('Error', 'Failed to get location.');
+    }
+  };
+
   const openModal = (type, currentValue) => {
     setModalType(type);
-    setModalValue(currentValue || '');
-    setTempValue(currentValue || '');
+    
+    if (type === 'location') {
+      // For location, check if it's an object with coordinates
+      if (typeof currentValue === 'object' && currentValue?.latitude) {
+        setTempLocation(currentValue);
+        setModalValue('');
+      } else {
+        setTempLocation(null);
+        setModalValue('');
+      }
+    } else {
+      setModalValue(currentValue || '');
+      setTempValue(currentValue || '');
+    }
+    
     setModalVisible(true);
   };
 
@@ -294,6 +510,8 @@ const Setting = ({ navigation }) => {
     setModalType('');
     setModalValue('');
     setTempValue('');
+    setTempLocation(null);
+    setFetchingLocation(false);
   };
 
   const saveField = async () => {
@@ -304,28 +522,46 @@ const Setting = ({ navigation }) => {
         return;
       }
 
-      if (modalType !== 'gender') {
-        if (!tempValue || tempValue.trim() === '') {
-          Alert.alert(t('alerts.error'), t('alerts.enterValue'));
-          return;
-        }
-      }
-
-      if (modalType === 'gender' && !tempValue) {
-        Alert.alert(t('alerts.error'), t('alerts.selectOption'));
-        return;
-      }
-
-      console.log(`Updating ${modalType} to:`, tempValue);
-
-      const updateData = {
-        [modalType]: tempValue.trim ? tempValue.trim() : tempValue,
-        updatedAt: firestore.FieldValue.serverTimestamp(),
-      };
+      let updateData = {};
 
       if (modalType === 'location') {
-        updateData.locationCompleted = true;
+        if (!tempLocation) {
+          Alert.alert(t('alerts.error'), 'Please get your location first.');
+          return;
+        }
+        
+        updateData = {
+          location: {
+            latitude: tempLocation.latitude,
+            longitude: tempLocation.longitude,
+            accuracy: tempLocation.accuracy,
+            city: tempLocation.city || '',
+            country: tempLocation.country || '',
+            fullAddress: tempLocation.fullAddress || '',
+          },
+          locationCompleted: true,
+          updatedAt: firestore.FieldValue.serverTimestamp(),
+        };
+      } else {
+        if (modalType !== 'gender') {
+          if (!tempValue || tempValue.trim() === '') {
+            Alert.alert(t('alerts.error'), t('alerts.enterValue'));
+            return;
+          }
+        }
+
+        if (modalType === 'gender' && !tempValue) {
+          Alert.alert(t('alerts.error'), t('alerts.selectOption'));
+          return;
+        }
+
+        updateData = {
+          [modalType]: tempValue.trim ? tempValue.trim() : tempValue,
+          updatedAt: firestore.FieldValue.serverTimestamp(),
+        };
       }
+
+      console.log(`Updating ${modalType}:`, updateData);
 
       await firestore()
         .collection('Useraccount')
@@ -335,6 +571,7 @@ const Setting = ({ navigation }) => {
       console.log('Field updated successfully');
       setUserData((prev) => ({ ...prev, ...updateData }));
       closeModal();
+      Alert.alert('Success', `${modalType} updated successfully!`);
     } catch (error) {
       console.error('Error updating field:', error);
       Alert.alert(t('alerts.error'), t('alerts.updateFailed'));
@@ -377,7 +614,7 @@ const Setting = ({ navigation }) => {
 
   const getModalPlaceholder = () => {
     switch (modalType) {
-      case 'location': return t('modal.enterLocation');
+      case 'location': return 'Tap button to get location';
       case 'age': return t('modal.enterAge');
       case 'weight': return t('modal.enterWeight');
       case 'gender': return t('modal.selectGender');
@@ -386,6 +623,65 @@ const Setting = ({ navigation }) => {
   };
 
   const renderModalContent = () => {
+    if (modalType === 'location') {
+      return (
+        <View style={styles.locationModalContent}>
+          {tempLocation ? (
+            <View style={styles.locationDisplay}>
+              <Text style={styles.locationLabel}>Current Location:</Text>
+              {tempLocation.city ? (
+                <>
+                  <Text style={styles.locationCity}>📍 {tempLocation.city}</Text>
+                  {tempLocation.country && (
+                    <Text style={styles.locationCountry}>{tempLocation.country}</Text>
+                  )}
+                </>
+              ) : (
+                <>
+                  <Text style={styles.locationCoords}>
+                    Lat: {tempLocation.latitude.toFixed(6)}
+                  </Text>
+                  <Text style={styles.locationCoords}>
+                    Long: {tempLocation.longitude.toFixed(6)}
+                  </Text>
+                </>
+              )}
+              <Text style={styles.locationAccuracy}>
+                Accuracy: ~{Math.round(tempLocation.accuracy)}m
+              </Text>
+            </View>
+          ) : (
+            <Text style={styles.noLocationText}>
+              No location selected. Please get your location.
+            </Text>
+          )}
+          
+          <TouchableOpacity 
+            style={[
+              styles.getLocationButton,
+              fetchingLocation && styles.getLocationButtonDisabled
+            ]}
+            onPress={getUserLocation}
+            disabled={fetchingLocation}
+          >
+            {fetchingLocation ? (
+              <View style={styles.loadingRow}>
+                <ActivityIndicator size="small" color="#FFFFFF" />
+                <Text style={styles.getLocationButtonText}>  Getting Location...</Text>
+              </View>
+            ) : (
+              <>
+                <Text style={styles.locationIcon}>📍</Text>
+                <Text style={styles.getLocationButtonText}>
+                  {tempLocation ? 'Update Location' : 'Get My Location'}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
     if (modalType === 'gender') {
       return (
         <View style={styles.optionsContainer}>
@@ -446,9 +742,7 @@ const Setting = ({ navigation }) => {
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="dark-content" backgroundColor="#D4A5AC" />
 
-      {/* Two-Tone Background Layout */}
       <View style={styles.mainContainer}>
-        {/* Top Half - Gradient Background */}
         <LinearGradient
           colors={['#D4A5AC', '#E8C4D4']}
           start={{ x: 0, y: 0 }}
@@ -458,13 +752,10 @@ const Setting = ({ navigation }) => {
           <Text style={styles.headerTitle}>{t('profile.header')}</Text>
         </LinearGradient>
 
-        {/* Profile Card - Positioned to overlap both sections */}
         <View style={styles.profileCardAbsolute}>
           <View style={styles.profileCardContainer}>
-            {/* Shadow/Background Layer */}
             <View style={styles.profileCardShadow} />
             
-            {/* Main Profile Card */}
             <View style={styles.profileCard}>
               <View style={styles.avatarWrap}>
                 <View style={styles.avatarInner}>
@@ -501,16 +792,13 @@ const Setting = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Bottom Half - Main Background Color */}
         <View style={styles.bottomHalfBackground} />
       </View>
 
-      {/* Main Content with ScrollView */}
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Personal Details Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('personalDetails.title')}</Text>
           <ProfileRow 
@@ -551,7 +839,6 @@ const Setting = ({ navigation }) => {
           />
         </View>
 
-        {/* Settings Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('settings.title')}</Text>
           
@@ -568,7 +855,6 @@ const Setting = ({ navigation }) => {
           />
         </View>
 
-        {/* Logout Button */}
         <TouchableOpacity 
           style={styles.logoutBtn} 
           activeOpacity={0.9} 
@@ -579,7 +865,7 @@ const Setting = ({ navigation }) => {
         </TouchableOpacity>
       </ScrollView>
 
-      <BottomNav navigation={navigation} active="setting" />
+      <BottomNav navigation={navigation} active="profile" />
 
       {/* Edit Field Modal */}
       <Modal
@@ -603,8 +889,12 @@ const Setting = ({ navigation }) => {
               </TouchableOpacity>
 
               <TouchableOpacity 
-                style={styles.doneButton} 
+                style={[
+                  styles.doneButton,
+                  (modalType === 'location' && !tempLocation) && styles.doneButtonDisabled
+                ]}
                 onPress={saveField}
+                disabled={modalType === 'location' && !tempLocation}
               >
                 <Text style={styles.doneButtonText}>{t('modal.done')}</Text>
               </TouchableOpacity>
@@ -665,14 +955,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#EDE2E0',
   },
   
-  // Main Container for Two-Tone Background
   mainContainer: {
     position: 'relative',
     width: '100%',
     height: isTablet ? verticalScale(320) : verticalScale(280),
   },
 
-  // Top Half - Gradient Background
   topHalfBackground: {
     width: '100%',
     height: '55%',
@@ -681,7 +969,7 @@ const styles = StyleSheet.create({
       ? moderateScale(16) 
       : moderateScale(12),
   },
-    headerTitle: {
+  headerTitle: {
     fontSize: scaleFont(32),
     fontWeight: '700',
     color: '#2D1B47',
@@ -689,20 +977,18 @@ const styles = StyleSheet.create({
     marginTop: isTablet 
       ? moderateScale(30) 
       : isSmallDevice 
-        ? moderateScale(15)  // Reduced for small devices
-        : moderateScale(20), // Reduced for normal devices
+        ? moderateScale(15)
+        : moderateScale(20),
     textAlign: 'center',
     paddingHorizontal: HORIZONTAL_PADDING,
   },
 
-  // Bottom Half - Main Background Color
   bottomHalfBackground: {
     width: '100%',
     height: '45%',
     backgroundColor: '#EDE2E0',
   },
 
-  // Profile Card - Absolutely Positioned
   profileCardAbsolute: {
     position: 'absolute',
     top: '55%',
@@ -717,7 +1003,6 @@ const styles = StyleSheet.create({
     zIndex: 100,
   },
 
-  // ScrollView Content
   scrollContent: {
     paddingTop: 0,
     paddingBottom: isTablet ? verticalScale(200) : verticalScale(160),
@@ -725,7 +1010,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#EDE2E0',
   },
 
-  // Profile Card Container
   profileCardContainer: {
     position: 'relative',
     width: PROFILE_CARD_WIDTH,
@@ -795,7 +1079,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // Sections
   section: {
     width: MAX_CONTENT_WIDTH,
     marginBottom: verticalScale(25),
@@ -830,7 +1113,6 @@ const styles = StyleSheet.create({
     marginRight: moderateScale(8),
   },
 
-  // Logout Button
   logoutBtn: {
     width: MAX_CONTENT_WIDTH,
     backgroundColor: '#FFF6EF',
@@ -854,7 +1136,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Modal Styles
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -892,6 +1173,80 @@ const styles = StyleSheet.create({
     borderColor: '#E6C4C0',
     minHeight: moderateScale(50),
   },
+  
+  // Location Modal Styles
+  locationModalContent: {
+    marginBottom: moderateScale(24),
+  },
+  locationDisplay: {
+    backgroundColor: '#F5DDD8',
+    borderRadius: moderateScale(12),
+    padding: moderateScale(16),
+    marginBottom: moderateScale(16),
+    borderWidth: 1,
+    borderColor: '#4CAF50',
+  },
+  locationLabel: {
+    fontSize: scaleFont(14),
+    fontWeight: '600',
+    color: '#2D1B47',
+    marginBottom: moderateScale(8),
+  },
+  locationCity: {
+    fontSize: scaleFont(18),
+    fontWeight: '700',
+    color: '#2D1B47',
+    marginBottom: moderateScale(4),
+  },
+  locationCountry: {
+    fontSize: scaleFont(14),
+    color: '#7A6B7A',
+    marginBottom: moderateScale(8),
+  },
+  locationCoords: {
+    fontSize: scaleFont(14),
+    color: '#2D1B47',
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    marginBottom: moderateScale(4),
+  },
+  locationAccuracy: {
+    fontSize: scaleFont(12),
+    color: '#7A6B7A',
+    marginTop: moderateScale(4),
+  },
+  noLocationText: {
+    fontSize: scaleFont(14),
+    color: '#7A6B7A',
+    textAlign: 'center',
+    marginBottom: moderateScale(16),
+    padding: moderateScale(12),
+  },
+  getLocationButton: {
+    backgroundColor: '#8B7B8B',
+    borderRadius: moderateScale(12),
+    paddingVertical: moderateScale(14),
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: moderateScale(50),
+  },
+  getLocationButtonDisabled: {
+    backgroundColor: 'rgba(139, 123, 139, 0.6)',
+  },
+  locationIcon: {
+    fontSize: scaleFont(18),
+    marginRight: moderateScale(8),
+  },
+  getLocationButtonText: {
+    color: '#FFFFFF',
+    fontSize: scaleFont(16),
+    fontWeight: '600',
+  },
+  loadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
   optionsContainer: {
     marginBottom: moderateScale(24),
   },
@@ -917,7 +1272,6 @@ const styles = StyleSheet.create({
     fontSize: scaleFont(16),
     color: '#2D1B47',
     fontWeight: '500',
-
   },
   radioButton: {
     width: moderateScale(24),
@@ -962,13 +1316,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: moderateScale(48),
   },
+  doneButtonDisabled: {
+    backgroundColor: 'rgba(201, 123, 132, 0.5)',
+  },
   doneButtonText: {
     fontSize: scaleFont(16),
     fontWeight: '600',
     color: '#FFFFFF',
   },
 
-  // Logout Modal
   logoutModalContent: {
     width: '100%',
     maxWidth: isTablet ? moderateScale(420) : moderateScale(340),

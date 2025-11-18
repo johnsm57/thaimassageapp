@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
@@ -40,7 +39,9 @@ const AppTourGuide = ({ onComplete, tourSteps }) => {
   useEffect(() => {
     if (isVisible) {
       fadeIn();
-      startPulseAnimation();
+      if (tourSteps[currentStep]?.targetPosition) {
+        startPulseAnimation();
+      }
     }
   }, [isVisible, currentStep]);
 
@@ -66,6 +67,7 @@ const AppTourGuide = ({ onComplete, tourSteps }) => {
   };
 
   const startPulseAnimation = () => {
+    pulseAnim.setValue(1);
     Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
@@ -168,23 +170,24 @@ const AppTourGuide = ({ onComplete, tourSteps }) => {
         {/* Dimmed background */}
         <Animated.View style={[styles.dimBackground, { opacity: fadeAnim }]} />
 
-        {/* Simple highlight on target element */}
+        {/* Highlight with rounded border for target elements */}
         {step.targetPosition && (
-          <View
+          <Animated.View
             style={[
               styles.spotlight,
               {
-                top: step.targetPosition.top - moderateScale(8),
-                left: step.targetPosition.left - moderateScale(8),
-                width: step.targetPosition.width + moderateScale(16),
-                height: step.targetPosition.height + moderateScale(16),
+                top: step.targetPosition.top - moderateScale(4),
+                left: step.targetPosition.left - moderateScale(4),
+                width: step.targetPosition.width + moderateScale(8),
+                height: step.targetPosition.height + moderateScale(8),
                 borderRadius: (step.targetPosition.borderRadius || moderateScale(12)) + moderateScale(4),
+                opacity: fadeAnim,
               },
             ]}
           />
         )}
 
-        {/* Simple indicator pointer */}
+        {/* Pulse indicator pointer */}
         {step.targetPosition && (
           <Animated.View
             style={[
@@ -193,16 +196,17 @@ const AppTourGuide = ({ onComplete, tourSteps }) => {
                 top: step.targetPosition.top + step.targetPosition.height / 2 - moderateScale(25),
                 left: step.targetPosition.left + step.targetPosition.width / 2 - moderateScale(25),
                 transform: [{ scale: pulseAnim }],
+                opacity: fadeAnim,
               },
             ]}
           >
             <View style={styles.pulseInner}>
-              <Icon name={step.icon || 'hand-pointing-up'} size={moderateScale(24)} color="#FFFFFF" />
+              <Icon name="hand-pointing-up" size={moderateScale(24)} color="#FFFFFF" />
             </View>
           </Animated.View>
         )}
 
-        {/* Tooltip */}
+        {/* Tooltip - Simplified */}
         <Animated.View
           style={[
             styles.tooltip,
@@ -228,6 +232,7 @@ const AppTourGuide = ({ onComplete, tourSteps }) => {
               />
             )}
 
+            {/* Simple Icon + Title */}
             <View style={styles.tooltipHeader}>
               <View style={styles.iconContainer}>
                 <Icon name={step.icon || 'information'} size={moderateScale(28)} color="#D96073" />
@@ -235,9 +240,10 @@ const AppTourGuide = ({ onComplete, tourSteps }) => {
               <Text style={styles.tooltipTitle}>{step.title}</Text>
             </View>
 
+            {/* Description */}
             <Text style={styles.tooltipDescription}>{step.description}</Text>
 
-            {/* Swipe demo for card swipe step */}
+            {/* Swipe demo only for card step */}
             {step.showSwipeDemo && (
               <View style={styles.swipeDemoContainer}>
                 <View style={styles.swipeDemo}>
@@ -270,7 +276,7 @@ const AppTourGuide = ({ onComplete, tourSteps }) => {
 
             {/* Step counter */}
             <Text style={styles.stepCounter}>
-              {currentStep + 1} of {tourSteps.length}
+              Step {currentStep + 1} of {tourSteps.length}
             </Text>
 
             {/* Action buttons */}
@@ -280,7 +286,7 @@ const AppTourGuide = ({ onComplete, tourSteps }) => {
                 onPress={handleSkip}
                 activeOpacity={0.7}
               >
-                <Text style={styles.skipButtonText}>Skip Tour</Text>
+                <Text style={styles.skipButtonText}>Skip</Text>
               </TouchableOpacity>
 
               <TouchableOpacity

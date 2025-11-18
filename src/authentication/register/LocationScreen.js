@@ -10,14 +10,18 @@ import {
   Alert,
   ActivityIndicator,
   PixelRatio,
+  Platform,
+  PermissionsAndroid,
+  Linking,
 } from 'react-native';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
+import Geolocation from 'react-native-geolocation-service';
+import { reverseGeocode } from '../../context/geocodingService'; 
 import { useLanguage } from '../../context/LanguageContext';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-// Responsive scaling functions
 const scale = (size) => (SCREEN_WIDTH / 375) * size;
 const verticalScale = (size) => (SCREEN_HEIGHT / 812) * size;
 const moderateScale = (size, factor = 0.5) => size + (scale(size) - size) * factor;
@@ -26,119 +30,318 @@ const scaleFont = (size) => {
   return Math.round(PixelRatio.roundToNearestPixel(scaledSize));
 };
 
-// Responsive dimensions
-const DROPDOWN_WIDTH = Math.min(SCREEN_WIDTH - moderateScale(60), moderateScale(348));
 const BUTTON_WIDTH = Math.min(SCREEN_WIDTH - moderateScale(70), moderateScale(338));
-const MAX_DROPDOWN_HEIGHT = Math.min(verticalScale(250), SCREEN_HEIGHT * 0.35);
 
 const LocationScreen = ({ navigation }) => {
   const { t, currentLanguage } = useLanguage();
-  const [location, setLocation] = useState('');
-  const [showLocationOptions, setShowLocationOptions] = useState(false);
+  const [location, setLocation] = useState(null);
+  const [locationName, setLocationName] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [fetchingLocation, setFetchingLocation] = useState(false);
+  const [permissionBlocked, setPermissionBlocked] = useState(false);
 
-  // Bangkok locations with translation keys
-  const bangkokLocations = [
-    { value: 'Sukhumvit', key: 'sukhumvit' },
-    { value: 'Silom', key: 'silom' },
-    { value: 'Siam', key: 'siam' },
-    { value: 'Chatuchak', key: 'chatuchak' },
-    { value: 'Thonglor', key: 'thonglor' },
-    { value: 'Ekkamai', key: 'ekkamai' },
-    { value: 'Phrom Phong', key: 'phromPhong' },
-    { value: 'Asok', key: 'asok' },
-    { value: 'Sathorn', key: 'sathorn' },
-    { value: 'Lumpini', key: 'lumpini' },
-    { value: 'Ratchathewi', key: 'ratchathewi' },
-    { value: 'Phaya Thai', key: 'phayaThai' },
-    { value: 'Dusit', key: 'dusit' },
-    { value: 'Bangsue', key: 'bangsue' },
-    { value: 'Huai Khwang', key: 'huaiKhwang' },
-    { value: 'Wang Thonglang', key: 'wangThonglang' },
-    { value: 'Lat Phrao', key: 'latPhrao' },
-    { value: 'Khlong Toei', key: 'khlongToei' },
-    { value: 'Watthana', key: 'watthana' },
-    { value: 'Bang Rak', key: 'bangRak' },
-  ];
+  useEffect(() => {
+    checkInitialPermission();
+  }, []);
 
-  const handleLocationSelect = (selectedLocation) => {
-    setLocation(selectedLocation);
-    setShowLocationOptions(false);
-    if (errorMessage) setErrorMessage('');
-  };
-
-  // Get translated location label
-  const getLocationLabel = (value) => {
-    const locationObj = bangkokLocations.find(loc => loc.value === value);
-    if (locationObj) {
-      return t(`locationScreen.locations.${locationObj.key}`);
+  const checkInitialPermission = async () => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.check(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+        );
+        
+        if (!granted) {
+          setPermissionBlocked(true);
+          setErrorMessage('Location permission is required. Please enable it in Settings.');
+        }
+      } catch (error) {
+        console.error('Error checking permission:', error);
+      }
     }
-    return value;
   };
 
-  // Save location to Firestore
- const saveUserLocation = async () => {
-  // Validate location selection
-  if (!location) {
-    setErrorMessage('Please select a location');
-    return;
-  }
+  const requestLocationPermission = async () => {
+    if (Platform.OS === 'ios') {
+      try {
+        const auth = await Geolocation.requestAuthorization('whenInUse');
+        console.log('iOS Location auth:', auth);
+        
+        if (auth === 'granted') {
+          setPermissionBlocked(false);
+          return true;
+        } else if (auth === 'denied' || auth === 'restricted') {
+          setPermissionBlocked(true);
+          Alert.alert(
+            'Location Permission Required',
+            'Please enable location permissions in Settings to use this feature.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { 
+                text: 'Open Settings', 
+                onPress: () => Linking.openSettings()
+              }
+            ]
+          );
+          return false;
+        }
+        return false;
+      } catch (error) {
+        console.error('iOS permission error:', error);
+        return false;
+      }
+    }
 
-  setLoading(true);
-  setErrorMessage('');
+    // Android
+    try {
+      const alreadyGranted = await PermissionsAndroid.check(
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+      );
 
-  try {
-    // Get current user
-    const currentUser = auth().currentUser;
+      if (alreadyGranted) {
+        setPermissionBlocked(false);
+        return true;
+      }
 
-    if (!currentUser) {
-      setErrorMessage('No user logged in');
-      setLoading(false);
-      Alert.alert('Error', 'No user logged in');
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+        {
+          title: 'Location Permission',
+          message: 'This app needs access to your location to find matches near you.',
+          buttonNeutral: 'Ask Me Later',
+          buttonNegative: 'Cancel',
+          buttonPositive: 'OK',
+        }
+      );
+
+      console.log('Android permission result:', granted);
+
+      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+        console.log('✅ Location permission granted');
+        setPermissionBlocked(false);
+        return true;
+      } else if (granted === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN || granted === 'never_ask_again') {
+        console.log('❌ Permission permanently denied');
+        setPermissionBlocked(true);
+        
+        Alert.alert(
+          '⚠️ Location Permission Blocked',
+          'Location permission has been permanently denied. Please enable it manually in Settings.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { 
+              text: 'Open Settings', 
+              onPress: () => Linking.openSettings()
+            }
+          ]
+        );
+        return false;
+      } else {
+        console.log('❌ Permission denied');
+        setPermissionBlocked(true);
+        Alert.alert(
+          'Permission Denied',
+          'Location permission is required to use this feature.'
+        );
+        return false;
+      }
+    } catch (err) {
+      console.error('Android permission error:', err);
+      Alert.alert('Error', 'Failed to request location permission: ' + err.message);
+      return false;
+    }
+  };
+
+  const getUserLocation = async () => {
+    console.log('=== Starting location fetch ===');
+    setFetchingLocation(true);
+    setErrorMessage('');
+
+    try {
+      const hasPermission = await requestLocationPermission();
+      console.log('Has permission:', hasPermission);
+
+      if (!hasPermission) {
+        setFetchingLocation(false);
+        setErrorMessage('Location permission denied. Please enable it in Settings.');
+        setPermissionBlocked(true);
+        return;
+      }
+
+      console.log('Calling getCurrentPosition...');
+
+      Geolocation.getCurrentPosition(
+        async (position) => {
+          console.log('✅ SUCCESS - Position received:', position);
+          const { latitude, longitude, accuracy } = position.coords;
+
+          // Get location name from coordinates
+          console.log('🔍 Fetching location name...');
+          const geocodeResult = await reverseGeocode(latitude, longitude);
+          
+          if (geocodeResult) {
+            console.log('✅ Location name:', geocodeResult.city);
+            setLocationName(geocodeResult.city);
+            
+            setLocation({
+              latitude,
+              longitude,
+              accuracy,
+              city: geocodeResult.city,
+              country: geocodeResult.country,
+              fullAddress: geocodeResult.fullAddress,
+            });
+          } else {
+            console.log('⚠️ Could not get location name');
+            setLocationName('Location Found');
+            setLocation({
+              latitude,
+              longitude,
+              accuracy,
+            });
+          }
+
+          console.log('Location set with name');
+          setFetchingLocation(false);
+          setErrorMessage('');
+          setPermissionBlocked(false);
+        },
+        (error) => {
+          console.error('❌ ERROR - Geolocation error:', error);
+          setFetchingLocation(false);
+
+          let errorMsg = '';
+          let errorTitle = 'Location Error';
+
+          switch (error.code) {
+            case 1:
+              errorMsg = 'Location permission was denied. Please enable location access in Settings.';
+              errorTitle = '⚠️ Permission Denied';
+              setPermissionBlocked(true);
+              Alert.alert(
+                errorTitle,
+                errorMsg,
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Open Settings', onPress: () => Linking.openSettings() }
+                ]
+              );
+              break;
+            case 2:
+              errorMsg = 'Could not determine your location. Please make sure GPS is enabled.';
+              errorTitle = 'Location Unavailable';
+              Alert.alert(
+                errorTitle,
+                errorMsg + '\n\nMake sure:\n• GPS is enabled\n• You are not in airplane mode\n• Location services are on',
+                [
+                  { text: 'OK', style: 'cancel' },
+                  { text: 'Open Settings', onPress: () => Linking.openSettings() }
+                ]
+              );
+              break;
+            case 3:
+              errorMsg = 'Location request timed out. Please try again.';
+              errorTitle = 'Timeout';
+              Alert.alert(errorTitle, errorMsg);
+              break;
+            default:
+              errorMsg = `Failed to get location: ${error.message || 'Unknown error'}`;
+              Alert.alert(errorTitle, errorMsg);
+          }
+
+          setErrorMessage(errorMsg);
+        },
+        {
+          accuracy: {
+            android: 'high',
+            ios: 'best',
+          },
+          enableHighAccuracy: true,
+          timeout: 20000,
+          maximumAge: 0,
+          distanceFilter: 0,
+          forceRequestLocation: true,
+          forceLocationManager: false,
+          showLocationDialog: true,
+        }
+      );
+
+    } catch (error) {
+      console.error('CATCH - Error in getUserLocation:', error);
+      setFetchingLocation(false);
+      setErrorMessage('Unexpected error: ' + error.message);
+      Alert.alert('Error', 'An unexpected error occurred: ' + error.message);
+    }
+  };
+
+  const openAppSettings = () => {
+    Linking.openSettings();
+  };
+
+  const saveUserLocation = async () => {
+    if (!location) {
+      setErrorMessage('Please get your location first');
+      Alert.alert('Error', 'Please get your location first by clicking "Get My Location" button.');
       return;
     }
 
-    const userId = currentUser.uid;
+    setLoading(true);
+    setErrorMessage('');
 
-    // Update user document in Firestore with location
-    await firestore()
-      .collection('Useraccount')
-      .doc(userId)
-      .set(
-        {
-          location: location, // Store the English value for consistency
-          updatedAt: firestore.FieldValue.serverTimestamp(),
-          locationCompleted: true,
-        },
-        { merge: true }
-      );
+    try {
+      const currentUser = auth().currentUser;
 
-    console.log('User location saved successfully!');
+      if (!currentUser) {
+        setErrorMessage('No user logged in');
+        setLoading(false);
+        Alert.alert('Error', 'No user logged in');
+        return;
+      }
 
-    // Navigate to Home instead of login
-    navigation.navigate('Home');
+      const userId = currentUser.uid;
 
-  } catch (error) {
-    console.error('Error saving user location:', error);
-    
-    let errorMsg = 'Failed to save location. Please try again.';
-    
-    if (error.code === 'firestore/permission-denied') {
-      errorMsg = 'Permission denied. Please check your account.';
-    } else if (error.code === 'firestore/unavailable') {
-      errorMsg = 'Network error. Please check your connection.';
-    } else if (error.code === 'firestore/not-found') {
-      errorMsg = 'Profile not found. Please contact support.';
+      // Save to Useraccount collection with both coordinates and city name
+      await firestore()
+        .collection('Useraccount')
+        .doc(userId)
+        .set(
+          {
+            location: {
+              latitude: location.latitude,
+              longitude: location.longitude,
+              accuracy: location.accuracy,
+              city: location.city || '',
+              country: location.country || '',
+              fullAddress: location.fullAddress || '',
+            },
+            updatedAt: firestore.FieldValue.serverTimestamp(),
+            locationCompleted: true,
+          },
+          { merge: true }
+        );
+
+      console.log('✅ User location saved to Useraccount collection successfully!');
+      navigation.navigate('Home');
+
+    } catch (error) {
+      console.error('❌ Error saving user location:', error);
+      
+      let errorMsg = 'Failed to save location. Please try again.';
+      
+      if (error.code === 'firestore/permission-denied') {
+        errorMsg = 'Permission denied. Please check your account.';
+      } else if (error.code === 'firestore/unavailable') {
+        errorMsg = 'Network error. Please check your connection.';
+      }
+      
+      setErrorMessage(errorMsg);
+      Alert.alert('Error', errorMsg);
+      
+    } finally {
+      setLoading(false);
     }
-    
-    setErrorMessage(errorMsg);
-    Alert.alert('Error', errorMsg);
-    
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <View style={styles.container}>
@@ -151,7 +354,7 @@ const LocationScreen = ({ navigation }) => {
             style={styles.backButton}
             onPress={() => navigation.goBack()}
             activeOpacity={0.7}
-            disabled={loading}
+            disabled={loading || fetchingLocation}
           >
             <View style={styles.backButtonContainer}>
               <View style={styles.arrowContainer}>
@@ -165,93 +368,82 @@ const LocationScreen = ({ navigation }) => {
         {/* Title Section */}
         <View style={styles.titleSection}>
           <Text style={styles.title}>Complete your profile</Text>
-          <Text style={styles.subtitle}>To get you the best matches please enter your location...</Text>
+          <Text style={styles.subtitle}>
+            To get you the best matches please share your current location...
+          </Text>
         </View>
 
+        {/* Permission Blocked Warning */}
+        {permissionBlocked && (
+          <View style={styles.warningContainer}>
+            <Text style={styles.warningIcon}>⚠️</Text>
+            <Text style={styles.warningText}>
+              Location permission is blocked. Please enable it in Settings to continue.
+            </Text>
+            <TouchableOpacity 
+              style={styles.settingsButton}
+              onPress={openAppSettings}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.settingsButtonText}>Open Settings</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Error Message */}
-        {errorMessage ? (
+        {errorMessage && !permissionBlocked ? (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>{errorMessage}</Text>
           </View>
         ) : null}
 
-        {/* Location Selection Section */}
-        <View style={styles.formSection}>
-          {/* Location Dropdown */}
-          <View style={styles.locationContainer}>
-            <TouchableOpacity 
-              style={[
-                styles.dropdownInput,
-                showLocationOptions && styles.dropdownInputExpanded,
-                errorMessage && !location && styles.dropdownInputError
-              ]}
-              onPress={() => !loading && setShowLocationOptions(!showLocationOptions)}
-              activeOpacity={0.7}
-              disabled={loading}
-            >
-              <Text style={[
-                styles.dropdownText,
-                location ? styles.dropdownTextSelected : styles.dropdownTextPlaceholder
-              ]}>
-                {location ? getLocationLabel(location) : 'Select your location'}
-              </Text>
-              <View style={styles.dropdownArrow}>
-                <Text style={[
-                  styles.dropdownArrowText,
-                  showLocationOptions && styles.dropdownArrowUp
-                ]}>
-                  ⌄
-                </Text>
-              </View>
-            </TouchableOpacity>
-
-            {/* Location Options */}
-            {showLocationOptions && (
-              <View style={styles.locationOptionsContainer}>
-                <ScrollView 
-                  style={styles.locationScrollView}
-                  showsVerticalScrollIndicator={true}
-                  nestedScrollEnabled={true}
-                >
-                  {bangkokLocations.map((option, index) => (
-                    <TouchableOpacity
-                      key={option.value}
-                      style={[
-                        styles.locationOptionItem,
-                        index === bangkokLocations.length - 1 && styles.locationOptionItemLast
-                      ]}
-                      onPress={() => handleLocationSelect(option.value)}
-                      activeOpacity={0.7}
-                      disabled={loading}
-                    >
-                      <Text style={styles.locationOptionText}>
-                        {t(`locationScreen.locations.${option.key}`)}
-                      </Text>
-                      <View style={styles.radioButtonContainer}>
-                        <View style={[
-                          styles.radioButton,
-                          location === option.value && styles.radioButtonSelected
-                        ]}>
-                          {location === option.value && <View style={styles.radioButtonInner} />}
-                        </View>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
+        {/* Success Message with Location Name */}
+        {location && !errorMessage ? (
+          <View style={styles.successContainer}>
+            <Text style={styles.successText}>✓ Location detected!</Text>
+            {locationName && (
+              <Text style={styles.locationNameText}>📍 {locationName}</Text>
             )}
           </View>
+        ) : null}
+
+        {/* Location Action Section */}
+        <View style={styles.formSection}>
+          {/* Get Location Button */}
+          <TouchableOpacity 
+            style={[
+              styles.locationButton,
+              location && styles.locationButtonSuccess,
+              fetchingLocation && styles.locationButtonDisabled
+            ]}
+            activeOpacity={0.8}
+            onPress={getUserLocation}
+            disabled={fetchingLocation || loading}
+          >
+            {fetchingLocation ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color="#FFFFFF" />
+                <Text style={styles.locationButtonText}>  Getting Location...</Text>
+              </View>
+            ) : (
+              <>
+                <Text style={styles.locationIcon}>📍</Text>
+                <Text style={styles.locationButtonText}>
+                  {location ? 'Update My Location' : 'Get My Location'}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
 
           {/* Complete Profile Button */}
           <TouchableOpacity 
             style={[
               styles.completeButton,
-              showLocationOptions ? styles.completeButtonExpanded : styles.completeButtonCollapsed,
-              loading && styles.completeButtonDisabled
+              (loading || !location) && styles.completeButtonDisabled
             ]}
             activeOpacity={0.8}
             onPress={saveUserLocation}
-            disabled={loading}
+            disabled={loading || !location || fetchingLocation}
           >
             {loading ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
@@ -306,7 +498,7 @@ const styles = StyleSheet.create({
   },
   titleSection: {
     paddingHorizontal: moderateScale(30),
-    marginBottom: verticalScale(80),
+    marginBottom: verticalScale(30),
   },
   title: {
     fontSize: scaleFont(32),
@@ -320,6 +512,39 @@ const styles = StyleSheet.create({
     color: '#7A6B7A',
     lineHeight: scaleFont(22),
     fontWeight: '400',
+  },
+  warningContainer: {
+    marginHorizontal: moderateScale(30),
+    marginBottom: moderateScale(20),
+    padding: moderateScale(20),
+    backgroundColor: 'rgba(255, 152, 0, 0.1)',
+    borderRadius: moderateScale(12),
+    borderLeftWidth: 4,
+    borderLeftColor: '#FF9800',
+    alignItems: 'center',
+  },
+  warningIcon: {
+    fontSize: scaleFont(32),
+    marginBottom: moderateScale(10),
+  },
+  warningText: {
+    color: '#E65100',
+    fontSize: scaleFont(14),
+    fontWeight: '500',
+    textAlign: 'center',
+    marginBottom: moderateScale(15),
+    lineHeight: scaleFont(20),
+  },
+  settingsButton: {
+    backgroundColor: '#FF9800',
+    paddingHorizontal: moderateScale(24),
+    paddingVertical: moderateScale(12),
+    borderRadius: moderateScale(8),
+  },
+  settingsButtonText: {
+    color: '#FFFFFF',
+    fontSize: scaleFont(14),
+    fontWeight: '700',
   },
   errorContainer: {
     marginHorizontal: moderateScale(30),
@@ -336,127 +561,70 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textAlign: 'center',
   },
+  successContainer: {
+    marginHorizontal: moderateScale(30),
+    marginBottom: moderateScale(20),
+    padding: moderateScale(15),
+    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+    borderRadius: moderateScale(8),
+    borderLeftWidth: 4,
+    borderLeftColor: '#4CAF50',
+  },
+  successText: {
+    color: '#4CAF50',
+    fontSize: scaleFont(16),
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: moderateScale(5),
+  },
+  locationNameText: {
+    color: '#2D1B47',
+    fontSize: scaleFont(18),
+    fontWeight: '700',
+    textAlign: 'center',
+    marginTop: moderateScale(8),
+  },
   formSection: {
     alignItems: 'center',
     paddingHorizontal: moderateScale(32),
+    marginTop: moderateScale(20),
   },
-  locationContainer: {
-    width: DROPDOWN_WIDTH,
-    marginBottom: moderateScale(30),
-    position: 'relative',
-  },
-  dropdownInput: {
-    width: DROPDOWN_WIDTH,
-    height: moderateScale(56),
-    backgroundColor: '#EDCFC9',
-    borderTopLeftRadius: moderateScale(12),
-    borderTopRightRadius: moderateScale(12),
-    borderBottomLeftRadius: moderateScale(12),
-    borderBottomRightRadius: moderateScale(12),
-    paddingHorizontal: moderateScale(20),
-    paddingVertical: moderateScale(16),
-    borderWidth: 1,
-    borderColor: '#D96073',
-    flexDirection: 'row',
+  locationButton: {
+    width: BUTTON_WIDTH,
+    height: moderateScale(54),
+    backgroundColor: '#8B7B8B',
+    borderRadius: moderateScale(16),
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: 'row',
+    marginBottom: moderateScale(20),
+    shadowColor: '#262628',
     shadowOffset: {
       width: 0,
       height: moderateScale(4),
     },
-    shadowOpacity: 0.1,
-    shadowRadius: moderateScale(1),
-    elevation: 4,
+    shadowOpacity: 0.2,
+    shadowRadius: moderateScale(12),
+    elevation: 8,
   },
-  dropdownInputExpanded: {
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
+  locationButtonSuccess: {
+    backgroundColor: '#4CAF50',
   },
-  dropdownInputError: {
-    borderColor: '#D96073',
-    borderWidth: 2,
+  locationButtonDisabled: {
+    backgroundColor: 'rgba(139, 123, 139, 0.6)',
   },
-  dropdownText: {
-    fontSize: scaleFont(16),
-    fontWeight: '500',
-    flex: 1,
-  },
-  dropdownTextPlaceholder: {
-    color: '#A68FA6',
-  },
-  dropdownTextSelected: {
-    color: '#2D1B47',
-  },
-  dropdownArrow: {
-    marginLeft: moderateScale(10),
-  },
-  dropdownArrowText: {
+  locationIcon: {
     fontSize: scaleFont(20),
-    color: '#D96073',
-    fontWeight: 'bold',
-    transform: [{ rotate: '0deg' }],
+    marginRight: moderateScale(8),
   },
-  dropdownArrowUp: {
-    transform: [{ rotate: '180deg' }],
-  },
-  locationOptionsContainer: {
-    width: DROPDOWN_WIDTH,
-    maxHeight: MAX_DROPDOWN_HEIGHT,
-    backgroundColor: '#EDCFC9',
-    borderBottomLeftRadius: moderateScale(12),
-    borderBottomRightRadius: moderateScale(12),
-    borderWidth: 1,
-    borderColor: '#EDCFC9',
-    borderTopWidth: 0,
-    position: 'absolute',
-    top: moderateScale(56),
-    zIndex: 10,
-  },
-  locationScrollView: {
-    maxHeight: MAX_DROPDOWN_HEIGHT,
-  },
-  locationOptionItem: {
+  loadingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: moderateScale(15),
-    paddingHorizontal: moderateScale(20),
-    minHeight: moderateScale(50),
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(139, 123, 139, 0.2)',
   },
-  locationOptionItemLast: {
-    borderBottomWidth: 0,
-  },
-  locationOptionText: {
+  locationButtonText: {
+    color: '#FFFFFF',
     fontSize: scaleFont(16),
-    color: '#2D1B47',
-    fontWeight: '500',
-    flex: 1,
-    marginRight: moderateScale(10),
-  },
-  radioButtonContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  radioButton: {
-    width: moderateScale(24),
-    height: moderateScale(24),
-    borderRadius: moderateScale(12),
-    borderWidth: 2,
-    borderColor: '#D96073',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'transparent',
-  },
-  radioButtonSelected: {
-    backgroundColor: '#D96073',
-  },
-  radioButtonInner: {
-    width: moderateScale(8),
-    height: moderateScale(8),
-    borderRadius: moderateScale(4),
-    backgroundColor: '#FFFFFF',
+    fontWeight: '700',
   },
   completeButton: {
     width: BUTTON_WIDTH,
@@ -465,6 +633,7 @@ const styles = StyleSheet.create({
     borderRadius: moderateScale(16),
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: moderateScale(30),
     shadowColor: '#262628',
     shadowOffset: {
       width: 0,
@@ -475,13 +644,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   completeButtonDisabled: {
-    backgroundColor: 'rgba(217, 96, 115, 0.6)',
-  },
-  completeButtonCollapsed: {
-    marginTop: moderateScale(50),
-  },
-  completeButtonExpanded: {
-    marginTop: MAX_DROPDOWN_HEIGHT + moderateScale(50),
+    backgroundColor: 'rgba(217, 96, 115, 0.4)',
   },
   completeButtonText: {
     color: '#FFFFFF',

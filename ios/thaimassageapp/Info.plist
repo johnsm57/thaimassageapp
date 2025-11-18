@@ -10,6 +10,9 @@
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+<string>We need your location to personalize your experience.</string>
+
 	<key>CFBundleDisplayName</key>
 	<string>thaimassageapp</string>
 	<key>CFBundleExecutable</key>

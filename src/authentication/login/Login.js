@@ -653,7 +653,7 @@ const Login = ({ navigation }) => {
                   </Text>
                 </View>
               ) : (
-                <View>
+                <View style={styles.forgotPasswordWrapper}>
                   <Text style={styles.forgotPasswordText}>{t('login.forgotPassword')}</Text>
                   <View style={styles.forgotPasswordUnderline} />
                 </View>
@@ -729,13 +729,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backArrow: {
-    fontSize: scaleFont(32),
+    fontSize: scaleFont(28),
     color: '#5D4A5D',
     fontWeight: 'bold',
-    width: moderateScale(11),
-    height: moderateScale(18),
-    textAlign: 'center',
-    lineHeight: scaleFont(32),
   },
   titleSection: {
     paddingHorizontal: moderateScale(30),
@@ -864,6 +860,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  forgotPasswordWrapper: {
+    alignItems: 'flex-start',
+  },
   forgotPasswordText: {
     fontSize: scaleFont(14),
     color: '#D96073',
@@ -872,7 +871,7 @@ const styles = StyleSheet.create({
   forgotPasswordUnderline: {
     height: 1,
     backgroundColor: '#D96073',
-    marginTop: moderateScale(2),
+    width: '100%',
   },
   loginButton: {
     width: BUTTON_WIDTH,

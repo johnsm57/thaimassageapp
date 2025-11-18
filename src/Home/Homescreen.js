@@ -64,80 +64,64 @@ const Homescreen = ({ navigation }) => {
   const cardRef = useRef(null);
 
   // Define tour steps with swipe demo
-  const tourSteps = [
-    {
-      title: t('tour.welcomeTitle') || 'Welcome!',
-      description: t('tour.welcomeDescription') || 'Let us show you how to find the perfect massage studio.',
-      icon: 'hand-wave',
-      tooltipPosition: {
-        top: verticalScale(150),
-        left: moderateScale(20),
-        right: moderateScale(20),
-      },
+  // Define tour steps - SIMPLIFIED
+const tourSteps = [
+  {
+    title: 'Welcome!',
+    description: 'Let us show you how to find the perfect massage studio.',
+    icon: 'hand-wave',
+    tooltipPosition: {
+      top: verticalScale(150),
+      left: moderateScale(20),
+      right: moderateScale(20),
     },
-    {
-      title: t('tour.swipeCardsTitle') || 'Swipe to Explore',
-      description: t('tour.swipeCardsDescription') || 'Swipe right to send a booking request, or swipe left to skip and see the next studio.',
-      icon: 'gesture-swipe',
-      targetPosition: cardLayout,
-      showSwipeDemo: true,
-      tooltipPosition: {
-        top: verticalScale(100),
-        left: moderateScale(20),
-        right: moderateScale(20),
-      },
-      arrowDirection: 'bottom',
+  },
+  {
+    title: 'Swipe Cards',
+    description: 'Swipe right to book or swipe left to skip and see the next studio.',
+    icon: 'gesture-swipe',
+    targetPosition: cardLayout,
+    showSwipeDemo: true,
+    tooltipPosition: {
+      top: verticalScale(100),
+      left: moderateScale(20),
+      right: moderateScale(20),
     },
-    {
-      title: t('tour.notificationsTitle') || 'Notifications',
-      description: t('tour.notificationsDescription') || 'Check your booking confirmations and studio messages here.',
-      icon: 'bell',
-      targetPosition: notificationButtonLayout,
-      tooltipPosition: {
-        top: notificationButtonLayout ? notificationButtonLayout.top + moderateScale(70) : verticalScale(150),
-        left: moderateScale(20),
-        right: moderateScale(20),
-      },
-      arrowDirection: 'top',
+    arrowDirection: 'bottom',
+  },
+  {
+    title: 'Notifications',
+    description: 'Check your booking confirmations here.',
+    icon: 'bell',
+    targetPosition: notificationButtonLayout,
+    tooltipPosition: {
+      top: notificationButtonLayout ? notificationButtonLayout.top + moderateScale(70) : verticalScale(150),
+      left: moderateScale(20),
+      right: moderateScale(20),
     },
-    {
-      title: t('tour.chatTitle') || 'Chat',
-      description: t('tour.chatDescription') || 'Message parlors directly to ask questions or confirm bookings.',
-      icon: 'chat',
-      targetPosition: {
-        top: SCREEN_HEIGHT - moderateScale(80),
-        left: SCREEN_WIDTH / 2 - moderateScale(80),
-        width: moderateScale(60),
-        height: moderateScale(60),
-        borderRadius: moderateScale(30),
-      },
-      tooltipPosition: {
-        bottom: moderateScale(160),
-        left: moderateScale(20),
-        right: moderateScale(20),
-      },
-      arrowDirection: 'bottom',
+    arrowDirection: 'top',
+  },
+  {
+    title: 'Chat',
+    description: 'Message parlors directly to ask questions.',
+    icon: 'chat',
+    tooltipPosition: {
+      bottom: moderateScale(160),
+      left: moderateScale(20),
+      right: moderateScale(20),
     },
-    {
-      title: t('tour.profileTitle') || 'Profile',
-      description: t('tour.profileDescription') || 'Access your bookings, preferences, and account settings.',
-      icon: 'account',
-      targetPosition: {
-        top: SCREEN_HEIGHT - moderateScale(80),
-        left: SCREEN_WIDTH - moderateScale(90),
-        width: moderateScale(60),
-        height: moderateScale(60),
-        borderRadius: moderateScale(30),
-      },
-      tooltipPosition: {
-        bottom: moderateScale(160),
-        left: moderateScale(20),
-        right: moderateScale(20),
-      },
-      arrowDirection: 'bottom',
+  },
+  {
+    title: 'Profile',
+    description: 'Access your bookings and account settings.',
+    icon: 'account',
+    tooltipPosition: {
+      bottom: moderateScale(160),
+      left: moderateScale(20),
+      right: moderateScale(20),
     },
-  ];
-
+  },
+];
   useEffect(() => {
     fetchUserName();
     setTimeout(() => {
@@ -697,7 +681,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap' 
   },
   tag: { 
-    backgroundColor: '#F0E4E0', 
+    backgroundColor: '#F6C5BB80', 
     paddingHorizontal: moderateScale(12), 
     paddingVertical: moderateScale(6), 
     borderRadius: moderateScale(12) 

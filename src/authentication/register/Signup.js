@@ -11,6 +11,7 @@ import {
   Alert,
   ActivityIndicator,
   PixelRatio,
+  Image,
 } from 'react-native';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
@@ -429,16 +430,12 @@ const Signup = ({ navigation }) => {
         {/* Header with Back Button */}
         <View style={styles.header}>
           <TouchableOpacity 
-            style={styles.backButton}
+            style={styles.backButtonContainer}
             onPress={() => navigation.goBack()}
             activeOpacity={0.7}
+            disabled={loading || googleLoading}
           >
-            <View style={styles.backButtonContainer}>
-              <View style={styles.arrowContainer}>
-                <Text style={styles.backArrow}>‹</Text>
-              </View>
-              <Text style={styles.backText}>{t('signup.back')}</Text>
-            </View>
+            <Text style={styles.backArrow}>‹</Text>
           </TouchableOpacity>
         </View>
 
@@ -494,9 +491,11 @@ const Signup = ({ navigation }) => {
               onPress={() => setShowPassword(!showPassword)}
               disabled={loading || googleLoading}
             >
-              <View style={styles.eyeIcon}>
-                <Text style={styles.eyeText}>👁</Text>
-              </View>
+              <Image 
+                source={require('../../assets/eye_line 1.png')}
+                style={styles.eyeIcon}
+                resizeMode="contain"
+              />
             </TouchableOpacity>
           </View>
 
@@ -555,34 +554,22 @@ const styles = StyleSheet.create({
     paddingBottom: verticalScale(40),
   },
   header: {
-    marginTop: verticalScale(80),
+    marginTop: verticalScale(52),
     marginBottom: verticalScale(40),
-  },
-  backButton: {
-    marginLeft: moderateScale(20),
+    paddingHorizontal: moderateScale(32),
   },
   backButtonContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  arrowContainer: {
-    width: moderateScale(40),
-    height: moderateScale(40),
+    width: moderateScale(45),
+    height: moderateScale(45),
     backgroundColor: 'rgba(237, 207, 201, 0.8)',
-    borderRadius: moderateScale(20),
+    borderRadius: moderateScale(8),
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: moderateScale(12),
   },
   backArrow: {
-    fontSize: scaleFont(24),
+    fontSize: scaleFont(28),
     color: '#5D4A5D',
     fontWeight: 'bold',
-  },
-  backText: {
-    fontSize: scaleFont(16),
-    color: '#5D4A5D',
-    fontWeight: '600',
   },
   titleSection: {
     paddingHorizontal: moderateScale(30),
@@ -654,18 +641,11 @@ const styles = StyleSheet.create({
   eyeButton: {
     position: 'absolute',
     right: (SCREEN_WIDTH - INPUT_WIDTH) / 2 + moderateScale(20),
-    top: '50%',
-    marginTop: moderateScale(-12),
+    top: moderateScale(16),
   },
   eyeIcon: {
     width: moderateScale(24),
     height: moderateScale(24),
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  eyeText: {
-    fontSize: scaleFont(18),
-    color: '#B8736B',
   },
   createButton: {
     width: BUTTON_WIDTH,
