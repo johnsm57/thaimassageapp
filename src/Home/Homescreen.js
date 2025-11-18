@@ -290,9 +290,7 @@ const Homescreen = ({ navigation }) => {
       duration: 250, 
       useNativeDriver: false 
     }).start(() => {
-      setNotificationType('skip');
-      setShowNotification(true);
-      setTimeout(() => setShowNotification(false), 1500);
+     
       nextCard();
     });
   };
@@ -456,7 +454,7 @@ const Homescreen = ({ navigation }) => {
           <Icon 
             name={notificationType === 'booking' ? "check-circle" : "close-circle"} 
             size={moderateScale(20)} 
-            color={notificationType === 'booking' ? "#51CF66" : "#FF6B6B"} 
+            color={notificationType === 'booking' ? "#D96073" : "#FF6B6B"} 
             style={styles.notificationIcon} 
           />
           <Text style={styles.notificationText}>
@@ -515,7 +513,7 @@ const styles = StyleSheet.create({
   notification: { 
     flexDirection: 'row', 
     alignItems: 'center', 
-    backgroundColor: '#FFFFFF', 
+    backgroundColor: '#E8BEC3', 
     marginHorizontal: moderateScale(40), 
     marginTop: moderateScale(8), 
     marginBottom: moderateScale(8), 
@@ -534,7 +532,7 @@ const styles = StyleSheet.create({
   },
   notificationText: { 
     fontSize: scaleFont(14), 
-    color: '#3D2C2C', 
+    color: '#D96073', 
     fontWeight: '600' 
   },
 

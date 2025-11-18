@@ -148,6 +148,8 @@ export default function Navigation() {
         <Stack.Screen name="chat" component={chat} />
         <Stack.Screen name="massage" component={MessagesScreen} />
         <Stack.Screen name="notifications" component={NotificationsScreen} />
+
+
       </Stack.Navigator>
     </NavigationContainer>
   );

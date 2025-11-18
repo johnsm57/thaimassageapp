@@ -9,8 +9,9 @@ import {
   ScrollView,
   Dimensions,
   ActivityIndicator,
-  Alert,
   PixelRatio,
+  Animated,
+  Image,
 } from 'react-native';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
@@ -63,6 +64,14 @@ const Login = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [resetPasswordSuccess, setResetPasswordSuccess] = useState(false);
+  const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
+  
+  // Animation values
+  const shakeAnimation = new Animated.Value(0);
+  const successAnimation = new Animated.Value(0);
 
   // Configure Google Sign-In
   useEffect(() => {
@@ -82,6 +91,31 @@ const Login = ({ navigation }) => {
 
     configureGoogleSignIn();
   }, []);
+
+  // Show success animation
+  useEffect(() => {
+    if (resetPasswordSuccess) {
+      Animated.sequence([
+        Animated.timing(successAnimation, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      successAnimation.setValue(0);
+    }
+  }, [resetPasswordSuccess]);
+
+  // Shake animation for errors
+  const shakeInput = () => {
+    Animated.sequence([
+      Animated.timing(shakeAnimation, { toValue: 10, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnimation, { toValue: -10, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnimation, { toValue: 10, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnimation, { toValue: 0, duration: 50, useNativeDriver: true }),
+    ]).start();
+  };
 
   // Validate email format
   const isValidEmail = (email) => {
@@ -351,21 +385,29 @@ const Login = ({ navigation }) => {
   // Handle login with email/password
   const handleLogin = async () => {
     setErrorMessage('');
+    setEmailError('');
+    setPasswordError('');
+    setResetPasswordSuccess(false);
+
+    let hasError = false;
 
     if (!email.trim()) {
-      setErrorMessage(t('login.enterEmailError'));
-      return;
-    }
-
-    if (!isValidEmail(email)) {
-      setErrorMessage(t('login.validEmailError'));
-      return;
+      setEmailError('Please fill this field');
+      shakeInput();
+      hasError = true;
+    } else if (!isValidEmail(email)) {
+      setEmailError('Please enter a valid email');
+      shakeInput();
+      hasError = true;
     }
 
     if (!password.trim()) {
-      setErrorMessage(t('login.enterPasswordError'));
-      return;
+      setPasswordError('Please fill this field');
+      shakeInput();
+      hasError = true;
     }
+
+    if (hasError) return;
 
     setLoading(true);
 
@@ -384,10 +426,12 @@ const Login = ({ navigation }) => {
         }
       } else {
         setErrorMessage(result.error);
+        shakeInput();
       }
     } catch (error) {
       console.error('Login error:', error);
       setErrorMessage(t('login.unexpectedError'));
+      shakeInput();
     } finally {
       setLoading(false);
     }
@@ -398,34 +442,67 @@ const Login = ({ navigation }) => {
     await signInWithGoogle();
   };
 
-  // Handle forgot password
+  // Handle forgot password - ENHANCED VERSION
   const handleForgotPassword = async () => {
+    setEmailError('');
+    setErrorMessage('');
+    setResetPasswordSuccess(false);
+
+    // Check if email field is empty
     if (!email.trim()) {
-      Alert.alert(t('login.emailRequired'), t('login.emailRequiredMessage'));
+      setEmailError('Please fill this field');
+      shakeInput();
       return;
     }
 
-    if (!isValidEmail(email)) {
-      Alert.alert(t('login.invalidEmail'), t('login.invalidEmailMessage'));
+    // Validate email format
+    if (!isValidEmail(email.trim())) {
+      setEmailError('Please enter a valid email');
+      shakeInput();
       return;
     }
+
+    setResetPasswordLoading(true);
 
     try {
       await auth().sendPasswordResetEmail(email.trim());
-      Alert.alert(
-        t('login.passwordResetSent'),
-        t('login.passwordResetMessage'),
-        [{ text: t('login.ok') }]
-      );
+      
+      // Show success message
+      setResetPasswordSuccess(true);
+      setEmailError('');
+      
+      // Hide success message after 8 seconds
+      setTimeout(() => {
+        setResetPasswordSuccess(false);
+      }, 8000);
+      
     } catch (error) {
       console.error('Error sending password reset email:', error);
       
-      let errorMsg = t('login.passwordResetFailed');
-      if (error.code === 'auth/user-not-found') {
-        errorMsg = t('login.noAccountFound');
+      let errorMsg = '';
+      
+      switch (error.code) {
+        case 'auth/user-not-found':
+          errorMsg = 'No account found with this email';
+          break;
+        case 'auth/invalid-email':
+          errorMsg = 'Please enter a valid email';
+          break;
+        case 'auth/network-request-failed':
+          errorMsg = 'Network error. Please check your connection';
+          break;
+        case 'auth/too-many-requests':
+          errorMsg = 'Too many attempts. Please try again later';
+          break;
+        default:
+          errorMsg = 'Failed to send reset email. Please try again';
       }
       
-      Alert.alert(t('alerts.error'), errorMsg);
+      setEmailError(errorMsg);
+      shakeInput();
+      
+    } finally {
+      setResetPasswordLoading(false);
     }
   };
 
@@ -437,17 +514,12 @@ const Login = ({ navigation }) => {
         {/* Header with Back Button */}
         <View style={styles.header}>
           <TouchableOpacity 
-            style={styles.backButton}
+            style={styles.backButtonContainer}
             onPress={() => navigation.goBack()}
             activeOpacity={0.7}
             disabled={loading || googleLoading}
           >
-            <View style={styles.backButtonContainer}>
-              <View style={styles.arrowContainer}>
-                <Text style={styles.backArrow}>‹</Text>
-              </View>
-              <Text style={styles.backText}>{t('login.back')}</Text>
-            </View>
+            <Text style={styles.backArrow}>‹</Text>
           </TouchableOpacity>
         </View>
 
@@ -464,35 +536,85 @@ const Login = ({ navigation }) => {
           </View>
         ) : null}
 
+        {/* Success Message for Password Reset */}
+        {resetPasswordSuccess && (
+          <Animated.View 
+            style={[
+              styles.successContainer,
+              {
+                opacity: successAnimation,
+                transform: [{
+                  translateY: successAnimation.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [-20, 0]
+                  })
+                }]
+              }
+            ]}
+          >
+            <Text style={styles.successIcon}>✓</Text>
+            <View style={styles.successTextContainer}>
+              <Text style={styles.successTitle}>Password reset email sent!</Text>
+              <Text style={styles.successText}>
+                Check your inbox or spam folder, click the link and add a new password
+              </Text>
+            </View>
+          </Animated.View>
+        )}
+
         {/* Form Section */}
         <View style={styles.formSection}>
           {/* Email Input */}
-          <View style={styles.inputContainer}>
+          <Animated.View 
+            style={[
+              styles.inputContainer,
+              { transform: [{ translateX: shakeAnimation }] }
+            ]}
+          >
             <TextInput
-              style={[styles.textInput, errorMessage && styles.textInputError]}
+              style={[
+                styles.textInput, 
+                (emailError || errorMessage) && styles.textInputError
+              ]}
               placeholder={t('login.enterEmail')}
               placeholderTextColor="#A68FA6"
               value={email}
               onChangeText={(text) => {
                 setEmail(text);
-                if (errorMessage) setErrorMessage('');
+                setEmailError('');
+                setErrorMessage('');
+                setResetPasswordSuccess(false);
               }}
               keyboardType="email-address"
               autoCapitalize="none"
-              editable={!loading && !googleLoading}
+              editable={!loading && !googleLoading && !resetPasswordLoading}
             />
-          </View>
+            {emailError ? (
+              <View style={styles.fieldErrorContainer}>
+                <Text style={styles.fieldErrorText}>{emailError}</Text>
+              </View>
+            ) : null}
+          </Animated.View>
 
           {/* Password Input */}
-          <View style={styles.inputContainer}>
+          <Animated.View 
+            style={[
+              styles.inputContainer,
+              { transform: [{ translateX: shakeAnimation }] }
+            ]}
+          >
             <TextInput
-              style={[styles.textInput, errorMessage && styles.textInputError]}
+              style={[
+                styles.textInput, 
+                (passwordError || errorMessage) && styles.textInputError
+              ]}
               placeholder={t('login.enterPassword')}
               placeholderTextColor="#A68FA6"
               value={password}
               onChangeText={(text) => {
                 setPassword(text);
-                if (errorMessage) setErrorMessage('');
+                setPasswordError('');
+                setErrorMessage('');
               }}
               secureTextEntry={!showPassword}
               autoCapitalize="none"
@@ -503,20 +625,39 @@ const Login = ({ navigation }) => {
               onPress={() => setShowPassword(!showPassword)}
               disabled={loading || googleLoading}
             >
-              <View style={styles.eyeIcon}>
-                <Text style={styles.eyeText}>👁</Text>
-              </View>
+              <Image 
+                source={require('../../assets/eye_line 1.png')}
+                style={styles.eyeIcon}
+                resizeMode="contain"
+              />
             </TouchableOpacity>
-          </View>
+            {passwordError ? (
+              <View style={styles.fieldErrorContainer}>
+                <Text style={styles.fieldErrorText}>{passwordError}</Text>
+              </View>
+            ) : null}
+          </Animated.View>
 
           {/* Forgot Password Link */}
           <View style={styles.forgotPasswordContainer}>
             <TouchableOpacity 
               activeOpacity={0.7}
               onPress={handleForgotPassword}
-              disabled={loading || googleLoading}
+              disabled={loading || googleLoading || resetPasswordLoading}
             >
-              <Text style={styles.forgotPasswordText}>{t('login.forgotPassword')}</Text>
+              {resetPasswordLoading ? (
+                <View style={styles.forgotPasswordLoadingContainer}>
+                  <ActivityIndicator size="small" color="#D96073" />
+                  <Text style={[styles.forgotPasswordText, { marginLeft: moderateScale(8) }]}>
+                    Sending...
+                  </Text>
+                </View>
+              ) : (
+                <View>
+                  <Text style={styles.forgotPasswordText}>{t('login.forgotPassword')}</Text>
+                  <View style={styles.forgotPasswordUnderline} />
+                </View>
+              )}
             </TouchableOpacity>
           </View>
 
@@ -575,34 +716,26 @@ const styles = StyleSheet.create({
     paddingBottom: verticalScale(40),
   },
   header: {
-    marginTop: verticalScale(80),
+    marginTop: verticalScale(52),
     marginBottom: verticalScale(40),
-  },
-  backButton: {
-    marginLeft: moderateScale(20),
+    paddingHorizontal: moderateScale(32),
   },
   backButtonContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  arrowContainer: {
-    width: moderateScale(40),
-    height: moderateScale(40),
+    width: moderateScale(45),
+    height: moderateScale(45),
     backgroundColor: 'rgba(237, 207, 201, 0.8)',
-    borderRadius: moderateScale(20),
+    borderRadius: moderateScale(8),
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: moderateScale(12),
   },
   backArrow: {
-    fontSize: scaleFont(24),
+    fontSize: scaleFont(32),
     color: '#5D4A5D',
     fontWeight: 'bold',
-  },
-  backText: {
-    fontSize: scaleFont(16),
-    color: '#5D4A5D',
-    fontWeight: '600',
+    width: moderateScale(11),
+    height: moderateScale(18),
+    textAlign: 'center',
+    lineHeight: scaleFont(32),
   },
   titleSection: {
     paddingHorizontal: moderateScale(30),
@@ -635,6 +768,38 @@ const styles = StyleSheet.create({
     fontSize: scaleFont(14),
     fontWeight: '500',
     textAlign: 'center',
+  },
+  successContainer: {
+    marginHorizontal: moderateScale(30),
+    marginBottom: moderateScale(20),
+    padding: moderateScale(16),
+    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+    borderRadius: moderateScale(12),
+    borderLeftWidth: 4,
+    borderLeftColor: '#4CAF50',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  successIcon: {
+    fontSize: scaleFont(24),
+    color: '#4CAF50',
+    fontWeight: 'bold',
+    marginRight: moderateScale(12),
+  },
+  successTextContainer: {
+    flex: 1,
+  },
+  successTitle: {
+    color: '#4CAF50',
+    fontSize: scaleFont(15),
+    fontWeight: 'bold',
+    marginBottom: moderateScale(6),
+  },
+  successText: {
+    color: '#2D7A30',
+    fontSize: scaleFont(13),
+    fontWeight: '500',
+    lineHeight: scaleFont(18),
   },
   formSection: {
     alignItems: 'center',
@@ -671,31 +836,43 @@ const styles = StyleSheet.create({
     borderColor: '#D96073',
     borderWidth: 2,
   },
+  fieldErrorContainer: {
+    width: INPUT_WIDTH,
+    marginTop: moderateScale(6),
+    paddingHorizontal: moderateScale(4),
+  },
+  fieldErrorText: {
+    color: '#D96073',
+    fontSize: scaleFont(13),
+    fontWeight: '500',
+  },
   eyeButton: {
     position: 'absolute',
     right: (SCREEN_WIDTH - INPUT_WIDTH) / 2 + moderateScale(20),
-    top: '50%',
-    marginTop: moderateScale(-12),
+    top: moderateScale(16),
   },
   eyeIcon: {
     width: moderateScale(24),
     height: moderateScale(24),
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  eyeText: {
-    fontSize: scaleFont(18),
-    color: '#B8736B',
   },
   forgotPasswordContainer: {
     alignSelf: 'flex-end',
     marginRight: (SCREEN_WIDTH - INPUT_WIDTH) / 2,
     marginBottom: moderateScale(30),
   },
+  forgotPasswordLoadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   forgotPasswordText: {
     fontSize: scaleFont(14),
     color: '#D96073',
     fontWeight: '500',
+  },
+  forgotPasswordUnderline: {
+    height: 1,
+    backgroundColor: '#D96073',
+    marginTop: moderateScale(2),
   },
   loginButton: {
     width: BUTTON_WIDTH,
