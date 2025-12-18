@@ -16,11 +16,10 @@ import { useLanguage } from '../context/LanguageContext';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useFocusEffect } from '@react-navigation/native';
 
 // IMPORTANT: Update this to your actual backend URL
-const API_BASE_URL = 'http://192.168.100.98:3000';
-const USE_BACKEND_API = true; // Now using backend API
+const API_BASE_URL = 'http://localhost:3000';
+const USE_BACKEND_API = false; // Set to true once backend endpoint is ready
 
 const NotificationsScreen = ({ navigation }) => {
   const { currentLanguage, t, translateDynamic } = useLanguage();
@@ -33,13 +32,6 @@ const NotificationsScreen = ({ navigation }) => {
   useEffect(() => {
     fetchNotifications();
   }, []);
-
-  // Refresh notifications when screen comes into focus
-  useFocusEffect(
-    React.useCallback(() => {
-      fetchNotifications();
-    }, [])
-  );
 
   // Translate notifications when language changes
   useEffect(() => {
@@ -77,7 +69,7 @@ const NotificationsScreen = ({ navigation }) => {
     }
   };
 
-  // Fetch from Backend API
+  // Fetch from Backend API (once endpoint is ready)
   const fetchFromBackend = async () => {
     try {
       setLoading(true);
@@ -90,75 +82,47 @@ const NotificationsScreen = ({ navigation }) => {
 
       const firebaseUID = currentUser.uid;
 
-      console.log('📋 Fetching bookings for user:', firebaseUID);
-
       const response = await fetch(
-        `${API_BASE_URL}/api/v1/bookings/fetch-user-bookings/${firebaseUID}`,
+        `${API_BASE_URL}/api/v1/bookings/user/${firebaseUID}`,
         {
           method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
+          headers:  {
+            'Content-Type':  'application/json',
           },
         }
       );
 
       if (!response.ok) {
-        const errorText = await response.text().catch(() => 'Unknown error');
-        throw new Error(`HTTP error! status: ${response.status}, ${errorText}`);
+        throw new Error(`HTTP error! status: ${response. status}`);
       }
 
       const data = await response.json();
 
-      console.log('📦 Bookings API Response:', data);
-
       if (data.success && data.bookings) {
         const transformedNotifications = data.bookings
-          .filter(booking => {
-            // Show all statuses: pending, accepted, rejected, cancelled
-            // You can filter specific statuses if needed
-            return ['pending', 'accepted', 'rejected', 'cancelled'].includes(booking.status);
-          })
-          .map((booking) => {
-            // Handle populated salon data
-            const salon = booking.reciever?.salonId;
-            const salonName = salon?.salonName || salon?.name || 'Massage Studio';
-            const salonImage = salon?.salonImage || null;
-            const salonId = salon?._id || booking.reciever?.salonId;
+          .filter(booking => booking.status === 'accepted' || booking.status === 'pending')
+          .map((booking) => ({
+            id: booking._id,
+            bookingId: booking._id,
+            name: booking. salonId?. salonName || 'Massage Studio',
+            message: getNotificationMessage(booking. status),
+            avatar: booking.salonId?.imageUrl || null,
+            timestamp: getTimeAgo(booking.updatedAt || booking.createdAt),
+            status: booking.status,
+            type: booking.status === 'accepted' ? 'success' : 'pending',
+            bookingDate: booking.requestedDateTime,
+            duration: booking.durationMinutes,
+            salonId: booking.salonId?._id,
+            salonOwnerId: booking.salonOwnerId,
+          }))
+          .sort((a, b) => new Date(b.bookingDate) - new Date(a.bookingDate));
 
-            return {
-              id: booking._id,
-              bookingId: booking._id,
-              name: salonName,
-              message: getNotificationMessage(booking.status),
-              avatar: salonImage,
-              timestamp: getTimeAgo(booking.updatedAt || booking.createdAt),
-              status: booking.status,
-              type: booking.status === 'accepted' ? 'success' : 
-                    booking.status === 'rejected' ? 'error' : 
-                    booking.status === 'cancelled' ? 'error' : 'pending',
-              bookingDate: booking.appointmentDetails?.requestedDateTime || booking.requestedDateTime,
-              duration: booking.appointmentDetails?.durationMinutes || booking.durationMinutes || 60,
-              salonId: salonId,
-              salonOwnerId: booking.reciever?.salonOwnerID,
-              createdAt: booking.createdAt,
-              updatedAt: booking.updatedAt,
-            };
-          })
-          .sort((a, b) => {
-            // Sort by updatedAt or createdAt, most recent first
-            const dateA = new Date(a.updatedAt || a.createdAt || a.bookingDate);
-            const dateB = new Date(b.updatedAt || b.createdAt || b.bookingDate);
-            return dateB - dateA;
-          });
-
-        console.log(`✅ Transformed ${transformedNotifications.length} notifications`);
         setNotifications(transformedNotifications);
       } else {
-        console.log('⚠️ No bookings found or invalid response');
         setNotifications([]);
       }
     } catch (err) {
-      console.error('❌ Error fetching from backend:', err);
+      console.error('Error fetching from backend:', err);
       setError(err.message || 'Failed to load notifications');
       setNotifications([]);
     } finally {
@@ -232,19 +196,15 @@ const NotificationsScreen = ({ navigation }) => {
   const getNotificationMessage = (status) => {
     switch (status) {
       case 'accepted':
-        return t('notifications.bookingAccepted') || 'Your massage has been confirmed! 🎉';
+        return 'Your massage has been confirmed!  🎉';
       case 'pending':
-        return t('notifications.bookingPending') || 'Your booking request is pending approval';
+        return 'Your booking request is pending approval';
       case 'rejected': 
-        return t('notifications.bookingRejected') || 'Your booking was declined';
+        return 'Your booking was declined';
       case 'cancelled':
-        return t('notifications.bookingCancelled') || 'Your booking was cancelled';
-      case 'no_show':
-        return t('notifications.bookingNoShow') || 'You missed your appointment';
-      case 'expired':
-        return t('notifications.bookingExpired') || 'Your booking request has expired';
+        return 'Your booking was cancelled';
       default:
-        return t('notifications.bookingUpdate') || 'Booking update';
+        return 'Booking update';
     }
   };
 
@@ -287,17 +247,14 @@ const NotificationsScreen = ({ navigation }) => {
 
   const handleDeleteNotification = async (id) => {
     // Optimistically update UI
-    const updatedNotifications = notifications.filter(notification => notification.id !== id);
-    setNotifications(updatedNotifications);
-    setTranslatedNotifications(translatedNotifications.filter(notification => notification.id !== id));
+    setNotifications(notifications.filter(notification => notification.id !== id));
 
     try {
       if (USE_BACKEND_API) {
-        // Note: We don't delete bookings from backend, just remove from UI
-        // If you want to actually delete, you'd need a DELETE endpoint for bookings
-        console.log('Notification removed from UI (booking remains in database)');
+        // Backend delete - add this endpoint later if needed
+        // await fetch(`${API_BASE_URL}/api/v1/notifications/${id}`, { method: 'DELETE' });
       } else {
-        // Firestore delete (legacy)
+        // Firestore delete
         await firestore().collection('bookings').doc(id).delete();
       }
     } catch (err) {
@@ -407,7 +364,6 @@ const NotificationsScreen = ({ navigation }) => {
                 styles.notificationItem,
                 item.type === 'success' && styles.notificationSuccess,
                 item.type === 'pending' && styles.notificationPending,
-                item.type === 'error' && styles.notificationError,
               ]}
               onPress={() => handleNotificationPress(item)}
               activeOpacity={0.7}
@@ -415,9 +371,8 @@ const NotificationsScreen = ({ navigation }) => {
               {/* Status Indicator */}
               <View style={[
                 styles.statusIndicator,
-                item.type === 'success' && styles.statusSuccess,
+                item.type === 'success' && styles. statusSuccess,
                 item.type === 'pending' && styles.statusPending,
-                item.type === 'error' && styles.statusError,
               ]} />
 
               {/* Avatar */}
@@ -443,23 +398,13 @@ const NotificationsScreen = ({ navigation }) => {
                   {item.type === 'pending' && (
                     <Icon name="clock-outline" size={16} color="#FF9800" />
                   )}
-                  {item.type === 'error' && (
-                    <Icon name="close-circle" size={16} color="#F44336" />
-                  )}
                 </View>
                 <Text style={styles.notificationMessage}>{item.message}</Text>
                 {item.bookingDate && (
                   <View style={styles.bookingInfo}>
                     <Icon name="calendar" size={12} color="#9B8B8F" />
                     <Text style={styles.bookingDate}>
-                      {(() => {
-                        try {
-                          const date = new Date(item.bookingDate);
-                          return date.toLocaleDateString() + ' • ' + (item.duration || 60) + 'min';
-                        } catch (e) {
-                          return 'Date TBD • ' + (item.duration || 60) + 'min';
-                        }
-                      })()}
+                      {new Date(item.bookingDate).toLocaleDateString()} • {item.duration}min
                     </Text>
                   </View>
                 )}
@@ -606,9 +551,6 @@ const styles = StyleSheet.create({
   notificationPending: {
     backgroundColor: '#FFF9F0',
   },
-  notificationError: {
-    backgroundColor: '#FFE5E5',
-  },
   statusIndicator: {
     position: 'absolute',
     left: 0,
@@ -621,9 +563,6 @@ const styles = StyleSheet.create({
   },
   statusPending: {
     backgroundColor: '#FF9800',
-  },
-  statusError: {
-    backgroundColor: '#F44336',
   },
   avatarContainer:  {
     marginLeft: 8,

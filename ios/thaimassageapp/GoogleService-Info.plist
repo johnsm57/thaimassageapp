@@ -3,23 +3,23 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>460156669437-5d6vn8oqece5lto2go0mkqn4lvpanllv.apps.googleusercontent.com</string>
+	<string>164432241102-rp7nvvvjksl1h6nae94857gs7nklkgm7.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.460156669437-5d6vn8oqece5lto2go0mkqn4lvpanllv</string>
+	<string>com.googleusercontent.apps.164432241102-rp7nvvvjksl1h6nae94857gs7nklkgm7</string>
 	<key>ANDROID_CLIENT_ID</key>
-	<string>460156669437-n7trc0rglb8d4simvu0dlepa73vo635t.apps.googleusercontent.com</string>
+	<string>164432241102-nafq97qnf2d1f37vbjibeqac422651qu.apps.googleusercontent.com</string>
 	<key>API_KEY</key>
-	<string>AIzaSyBIpBz0Rc3MqGj4I4RmBsrPyxDaGUmsFuQ</string>
+	<string>AIzaSyDXCaZDOU5mYVaErOTSWCFhifBvdpyAZkw</string>
 	<key>GCM_SENDER_ID</key>
-	<string>460156669437</string>
+	<string>164432241102</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>thaimassageapp</string>
+	<string>com.thaimassageapp</string>
 	<key>PROJECT_ID</key>
-	<string>thaiapp-1267a</string>
+	<string>luci-app-443ca</string>
 	<key>STORAGE_BUCKET</key>
-	<string>thaiapp-1267a.firebasestorage.app</string>
+	<string>luci-app-443ca.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -31,6 +31,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:460156669437:ios:db82890250575c94015d94</string>
+	<string>1:164432241102:ios:8d62ddc2330f1815748b9f</string>
 </dict>
 </plist>
