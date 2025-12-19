@@ -12,11 +12,12 @@ export const chatApi = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData),
       });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to register user');
+      // Accept both 200 (user exists) and 201 (user created) as success
+      if (response.status === 200 || response.status === 201) {
+        return response.json();
       }
-      return response.json();
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to register user');
     } catch (error) {
       console.error('Error registering user:', error);
       throw error;

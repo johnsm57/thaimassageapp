@@ -147,17 +147,32 @@ const MessagesScreen = ({ navigation }) => {
         const userData = userDoc.data();
         
         // Try to get user from chat backend
+        let chatUser = null;
         try {
-          await chatApi.getUser(currentUser.uid);
+          chatUser = await chatApi.getUser(currentUser.uid);
+          console.log('✅ User found in chat backend:', chatUser._id);
         } catch (error) {
+          console.log('⚠️ User not found, registering...', error.message);
           // User doesn't exist in chat backend, register them
-          await chatApi.registerUser({
-            firebaseUid: currentUser.uid, // Add Firebase UID
-            name: userData.name || currentUser.displayName || 'User',
-            email: userData.email || currentUser.email || `${currentUser.uid}@example.com`,
-            phone: userData.phone || '0000000000', // Provide default phone
-            avatar: userData.profileImage || userData.photoURL || '',
-          });
+          try {
+            const registrationResult = await chatApi.registerUser({
+              firebaseUid: currentUser.uid, // Add Firebase UID
+              name: userData.name || currentUser.displayName || 'User',
+              email: userData.email || currentUser.email || `${currentUser.uid}@example.com`,
+              phone: userData.phone || '0000000000', // Provide default phone
+              avatar: userData.profileImage || userData.photoURL || '',
+            });
+            console.log('✅ User registered in chat backend:', registrationResult.user?._id);
+            chatUser = registrationResult.user;
+          } catch (regError) {
+            // If registration fails with "already exists", try to get user again
+            if (regError.message && regError.message.includes('already exists')) {
+              console.log('⚠️ User already exists, fetching again...');
+              chatUser = await chatApi.getUser(currentUser.uid);
+            } else {
+              throw regError;
+            }
+          }
         }
       }
     } catch (error) {
