@@ -18,8 +18,8 @@ import firestore from '@react-native-firebase/firestore';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 // IMPORTANT: Update this to your actual backend URL
-const API_BASE_URL = 'http://localhost:3000';
-const USE_BACKEND_API = false; // Set to true once backend endpoint is ready
+const API_BASE_URL = 'http://192.168.100.98:3000';
+const USE_BACKEND_API = true; // Backend endpoint is now ready
 
 const NotificationsScreen = ({ navigation }) => {
   const { currentLanguage, t, translateDynamic } = useLanguage();
@@ -93,37 +93,69 @@ const NotificationsScreen = ({ navigation }) => {
       );
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response. status}`);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
 
       if (data.success && data.bookings) {
+        console.log('Received bookings from backend:', data.bookings.length);
         const transformedNotifications = data.bookings
           .filter(booking => booking.status === 'accepted' || booking.status === 'pending')
-          .map((booking) => ({
-            id: booking._id,
-            bookingId: booking._id,
-            name: booking. salonId?. salonName || 'Massage Studio',
-            message: getNotificationMessage(booking. status),
-            avatar: booking.salonId?.imageUrl || null,
-            timestamp: getTimeAgo(booking.updatedAt || booking.createdAt),
-            status: booking.status,
-            type: booking.status === 'accepted' ? 'success' : 'pending',
-            bookingDate: booking.requestedDateTime,
-            duration: booking.durationMinutes,
-            salonId: booking.salonId?._id,
-            salonOwnerId: booking.salonOwnerId,
-          }))
-          .sort((a, b) => new Date(b.bookingDate) - new Date(a.bookingDate));
+          .map((booking) => {
+            // Handle MongoDB structure: reciever.salonId, appointmentDetails, etc.
+            const salonData = booking.reciever?.salonId || {};
+            const appointmentDetails = booking.appointmentDetails || {};
+            
+            // Debug logging
+            if (salonData) {
+              console.log('Salon data:', {
+                salonName: salonData.salonName,
+                salonImage: salonData.salonImage,
+                salonId: salonData._id
+              });
+            }
+            
+            // Handle date parsing for MongoDB dates (can be strings or Date objects)
+            const updatedAt = booking.updatedAt ? new Date(booking.updatedAt) : null;
+            const createdAt = booking.createdAt ? new Date(booking.createdAt) : null;
+            const requestedDateTime = appointmentDetails.requestedDateTime 
+              ? new Date(appointmentDetails.requestedDateTime) 
+              : null;
+
+            return {
+              id: booking._id,
+              bookingId: booking._id,
+              name: salonData.salonName || 'Massage Studio',
+              message: getNotificationMessage(booking.status),
+              avatar: salonData.salonImage || null,
+              timestamp: getTimeAgo(updatedAt || createdAt),
+              status: booking.status,
+              type: booking.status === 'accepted' ? 'success' : 'pending',
+              bookingDate: requestedDateTime || createdAt,
+              duration: appointmentDetails.durationMinutes || 60,
+              salonId: salonData._id,
+              salonOwnerId: booking.reciever?.salonOwnerID,
+            };
+          })
+          .sort((a, b) => {
+            const dateA = new Date(a.bookingDate);
+            const dateB = new Date(b.bookingDate);
+            return dateB - dateA;
+          });
 
         setNotifications(transformedNotifications);
+        console.log('Successfully loaded notifications from backend:', transformedNotifications.length);
       } else {
         setNotifications([]);
+        console.log('No bookings found in backend response');
       }
     } catch (err) {
       console.error('Error fetching from backend:', err);
-      setError(err.message || 'Failed to load notifications');
+      const errorMessage = err.message || 'Failed to load notifications';
+      setError(errorMessage.includes('fetch') || errorMessage.includes('network')
+        ? 'Unable to connect to server. Please check your internet connection.'
+        : errorMessage);
       setNotifications([]);
     } finally {
       setLoading(false);
@@ -145,14 +177,39 @@ const NotificationsScreen = ({ navigation }) => {
       const firebaseUID = currentUser.uid;
 
       // Fetch user's bookings from Firestore
-      const bookingsSnapshot = await firestore()
-        .collection('bookings')
-        .where('firebaseUID', '==', firebaseUID)
-        .orderBy('createdAt', 'desc')
-        .limit(50)
-        .get();
+      // Note: Bookings are typically stored in MongoDB, but we check Firestore as fallback
+      // Try different field paths in case bookings exist in Firestore with different structures
+      let bookingsSnapshot = null;
+      
+      try {
+        // Try nested field path first (requester.firebaseUID)
+        bookingsSnapshot = await firestore()
+          .collection('bookings')
+          .where('requester.firebaseUID', '==', firebaseUID)
+          .limit(50)
+          .get();
+      } catch (err) {
+        console.log('Trying alternative field path...', err.message);
+        // Try flat field path as fallback
+        try {
+          bookingsSnapshot = await firestore()
+            .collection('bookings')
+            .where('firebaseUID', '==', firebaseUID)
+            .limit(50)
+            .get();
+        } catch (err2) {
+          console.log('Both field paths failed, no bookings in Firestore', err2.message);
+          bookingsSnapshot = { empty: true, docs: [] };
+        }
+      }
 
-      if (! bookingsSnapshot.empty) {
+      console.log('Firestore query result:', {
+        empty: bookingsSnapshot?.empty,
+        size: bookingsSnapshot?.size || 0,
+        firebaseUID
+      });
+
+      if (!bookingsSnapshot.empty && bookingsSnapshot.size > 0) {
         const firestoreNotifications = bookingsSnapshot.docs
           .map(doc => {
             const data = doc.data();
@@ -162,25 +219,52 @@ const NotificationsScreen = ({ navigation }) => {
               return null;
             }
 
+            // Handle nested structure (requester, reciever) or flat structure
+            const requester = data.requester || {};
+            const reciever = data.reciever || {};
+            const appointmentDetails = data.appointmentDetails || {};
+            const salonData = reciever.salonId || {};
+            
+            const createdAt = data.createdAt?.toDate() || new Date(0);
+            const updatedAt = data.updatedAt?.toDate();
+            const requestedDateTime = appointmentDetails.requestedDateTime?.toDate 
+              ? appointmentDetails.requestedDateTime.toDate() 
+              : (appointmentDetails.requestedDateTime 
+                ? new Date(appointmentDetails.requestedDateTime) 
+                : (data.requestedDateTime?.toDate ? data.requestedDateTime.toDate() : (data.requestedDateTime ? new Date(data.requestedDateTime) : null)));
+
             return {
               id: doc.id,
               bookingId: doc.id,
-              name: data.salonName || 'Massage Studio',
+              name: salonData.name || data.salonName || 'Massage Studio',
               message: getNotificationMessage(data.status),
-              avatar: data.salonImage || null,
-              timestamp:  getTimeAgo(data.updatedAt?. toDate() || data.createdAt?.toDate()),
+              avatar: salonData.imageUrl || data.salonImage || null,
+              timestamp:  getTimeAgo(updatedAt || createdAt),
               status: data.status,
               type: data.status === 'accepted' ? 'success' : 'pending',
-              bookingDate: data.requestedDateTime,
-              duration: data.durationMinutes || 60,
-              salonId: data.salonId,
+              bookingDate: requestedDateTime || createdAt,
+              duration: appointmentDetails.durationMinutes || data.durationMinutes || 60,
+              salonId: salonData._id || data.salonId,
+              _sortDate: createdAt, // For sorting
             };
           })
-          .filter(n => n !== null); // Remove null entries
+          .filter(n => n !== null) // Remove null entries
+          .sort((a, b) => {
+            // Sort by creation date, newest first
+            return b._sortDate - a._sortDate;
+          })
+          .map(({ _sortDate, ...notification }) => notification); // Remove sort helper field
         
         setNotifications(firestoreNotifications);
+        console.log('Successfully loaded notifications from Firestore:', firestoreNotifications.length);
       } else {
+        console.log('No bookings found in Firestore for user:', firebaseUID);
         setNotifications([]);
+        // Bookings are stored in MongoDB (backend database), not Firestore
+        // To fetch notifications, you need to either:
+        // 1. Create a backend endpoint: GET /api/v1/bookings/user/:firebaseUID
+        // 2. Or sync bookings to Firestore when they're created
+        setError('No notifications found. Bookings are stored in the backend database.');
       }
     } catch (err) {
       console.error('Error fetching from Firestore:', err);
@@ -231,7 +315,7 @@ const NotificationsScreen = ({ navigation }) => {
     if (currentLanguage === 'th') {
       if (timestamp === 'Just now') return 'เมื่อสักครู่';
       if (timestamp === 'Recently') return 'เมื่อเร็วๆ นี้';
-      if (timestamp. includes('m ago')) {
+      if (timestamp.includes('m ago')) {
         const minutes = timestamp.match(/\d+/)?.[0] || '0';
         return `${minutes} นาทีที่แล้ว`;
       } else if (timestamp.includes('h ago')) {
@@ -288,7 +372,7 @@ const NotificationsScreen = ({ navigation }) => {
           colors={['#DEAAB2', '#FFDDE5']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={styles. header}
+          style={styles.header}
         >
           <TouchableOpacity 
             style={styles.backButton} 
@@ -323,9 +407,9 @@ const NotificationsScreen = ({ navigation }) => {
           style={styles.backButton} 
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles. backIcon}>‹</Text>
+          <Text style={styles.backIcon}>‹</Text>
         </TouchableOpacity>
-        <Text style={styles. headerTitle}>{t('notifications.header')}</Text>
+        <Text style={styles.headerTitle}>{t('notifications.header')}</Text>
         <TouchableOpacity 
           style={styles.refreshButton} 
           onPress={fetchNotifications}
@@ -336,9 +420,9 @@ const NotificationsScreen = ({ navigation }) => {
 
       {/* Error State */}
       {error && (
-        <View style={styles. errorBanner}>
+        <View style={styles.errorBanner}>
           <Icon name="alert-circle" size={20} color="#D96073" />
-          <Text style={styles. errorText}>{error}</Text>
+          <Text style={styles.errorText}>{error}</Text>
         </View>
       )}
 
@@ -371,7 +455,7 @@ const NotificationsScreen = ({ navigation }) => {
               {/* Status Indicator */}
               <View style={[
                 styles.statusIndicator,
-                item.type === 'success' && styles. statusSuccess,
+                item.type === 'success' && styles.statusSuccess,
                 item.type === 'pending' && styles.statusPending,
               ]} />
 
