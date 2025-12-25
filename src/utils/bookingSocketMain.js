@@ -3,7 +3,7 @@
 import io from 'socket.io-client';
 
 // IMPORTANT: This should match your main backend URL (not chat backend)
-const BOOKING_SOCKET_URL = "http://192.168.18.47:3000";
+const BOOKING_SOCKET_URL = process.env.API_BASE_URL || "http://192.168.18.47:3000";
 
 let bookingSocket = null;
 

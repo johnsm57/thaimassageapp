@@ -59,7 +59,7 @@ const CARD_RAISE = verticalScale(40)
 // For Android emulator: use "http://10.0.2.2:3000"
 // For physical device: use your computer's IP (e.g., "http://192.168.x.x:3000")
 // Find your IP: Mac/Linux: ifconfig | grep "inet " | grep -v 127.0.0.1
-const API_BASE_URL = "http://192.168.18.47:3000"
+const API_BASE_URL = process.env.API_BASE_URL || "http://192.168.18.47:3000"
 
 const Homescreen = ({ navigation }) => {
   const { currentLanguage, t, formatText, translateDynamic } = useLanguage()
@@ -337,6 +337,7 @@ const Homescreen = ({ navigation }) => {
   }
 
   // Fetch recommendations from backend (maps API response to UI model)
+  // Now fetches both salon profiles and private massagers
   const fetchRecommendations = async () => {
     const startTime = Date.now()
     try {
@@ -354,138 +355,166 @@ const Homescreen = ({ navigation }) => {
       const latitude = 24.8607
       const longitude = 67.0011
 
-      const url = `${API_BASE_URL}/api/v1/recommendations/${uid}?limit=20&latitude=${latitude}&longitude=${longitude}`
-      console.log("🌐 Fetching from:", url)
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-      const fetchTime = Date.now() - startTime
-      console.log(`⏱️ Fetch took ${fetchTime}ms, status: ${response.status}`)
+      // Fetch both salon recommendations and private massagers in parallel
+      const [salonResponse, privateMassagerResponse] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/v1/recommendations/${uid}?limit=20&latitude=${latitude}&longitude=${longitude}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }).catch(err => {
+          console.warn("⚠️ Error fetching salon recommendations:", err)
+          return null
+        }),
+        fetch(`${API_BASE_URL}/api/private-massagers?limit=20`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }).catch(err => {
+          console.warn("⚠️ Error fetching private massagers:", err)
+          return null
+        }),
+      ])
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+      const fetchTime = Date.now() - startTime
+      console.log(`⏱️ Fetch took ${fetchTime}ms`)
+
+      // Process salon recommendations
+      let salonRecommendations = []
+      if (salonResponse && salonResponse.ok) {
+        const salonData = await salonResponse.json()
+        console.log("📥 Received salon recommendations:", salonData)
+        salonRecommendations = salonData.recommendations || salonData.data || []
       }
 
-      const data = await response.json()
-      console.log("📥 Received recommendations data:", data)
+      // Process private massagers
+      let privateMassagers = []
+      if (privateMassagerResponse && privateMassagerResponse.ok) {
+        const massagerData = await privateMassagerResponse.json()
+        console.log("📥 Received private massagers:", massagerData)
+        privateMassagers = massagerData.data || []
+      }
 
-      // The API docs show data.recommendations array where each item can either:
-      // - be a flat salon-like object (with _id, salonName, ownerId, etc.)
-      // - or an object that includes `salon` nested object (older shape)
-      // Handle both shapes robustly:
-      if (data.success && (data.recommendations || data.data || data.recommendation)) {
-        const items = data.recommendations || data.data || data.recommendation
+      const data = { success: true, salonRecommendations, privateMassagers }
+      console.log("📥 Combined data:", data)
 
-        if (!Array.isArray(items) || items.length === 0) {
-          console.warn("⚠️ No recommendations in response")
-          setError("No recommendations available. Try making some bookings first!")
-          setStudios([])
-          setLoading(false)
-          return
+      // Transform salon recommendations to unified format
+      const transformedSalons = (data.salonRecommendations || []).map((rec, index) => {
+        const salon = rec.salon || rec
+        const salonId = salon._id || salon.salonId || salon.id || rec._id || index
+
+        // Extract ownerId
+        let ownerId = null
+        const ownerIdSource = rec.ownerId || salon.ownerId || salon.owner?._id
+        if (ownerIdSource) {
+          ownerId = typeof ownerIdSource === "object"
+            ? (ownerIdSource._id || ownerIdSource.toString() || String(ownerIdSource))
+            : String(ownerIdSource)
         }
 
-        console.log(`✅ Found ${items.length} recommendations`)
-
-        // Log first recommendation to see structure
-        if (items.length > 0) {
-          console.log("📋 Sample recommendation structure:", JSON.stringify(items[0], null, 2))
+        // Extract price
+        let price = 0
+        try {
+          if (typeof salon.priceRange === "string") {
+            const parsed = salon.priceRange.replace(/\D/g, "")
+            price = parsed ? parseInt(parsed, 10) : 0
+          } else if (typeof salon.priceRange === "number") {
+            price = salon.priceRange
+          }
+        } catch (e) {
+          price = 0
         }
 
-        // Filter out recommendations without ownerId (required for booking)
-        const validItems = items.filter((rec) => {
-          const salon = rec.salon || rec
-          const hasOwnerId = rec.ownerId || salon.ownerId || salon.owner?._id || salon.salonOwnerId
-          if (!hasOwnerId) {
-            console.warn("⚠️ Recommendation missing ownerId:", {
-              recKeys: Object.keys(rec),
-              salonKeys: salon ? Object.keys(salon) : "no salon",
-              recOwnerId: rec.ownerId,
-              salonOwnerId: salon?.ownerId,
-              salonOwner: salon?.owner
-            })
-          }
-          return !!hasOwnerId
-        })
-        
-        console.log(`✅ Filtered to ${validItems.length} valid recommendations with ownerId`)
+        const matchScore = rec.score || rec.matchScore || 0
+        const rating = convertScoreToRating(matchScore)
 
-        const transformedStudios = validItems.map((rec, index) => {
-          // rec may be { salon: {...}, score, reasons } OR may be salon-like directly
-          // The recommendations API returns ownerId at both top level and nested in salon
-          const salon = rec.salon || rec
-          const salonId = salon._id || salon.salonId || salon.id || rec._id || index
-
-          // Extract ownerId - check both top level and nested, handle various formats
-          let ownerId = null
-          // Try top-level ownerId first (recommendations API provides this)
-          const ownerIdSource = rec.ownerId || salon.ownerId || salon.owner?._id
-
-          if (ownerIdSource) {
-            if (typeof ownerIdSource === "object") {
-              // If it's an object (MongoDB ObjectId), try to get _id or convert to string
-              ownerId = ownerIdSource._id || ownerIdSource.toString() || String(ownerIdSource)
-            } else {
-              // If it's a string or other primitive, convert to string
-              ownerId = String(ownerIdSource)
-            }
-          }
-
-          // priceRange may be string like "$$" or numeric - try to extract digits if present
-          let price = 0
-          try {
-            if (typeof salon.priceRange === "string") {
-              const parsed = salon.priceRange.replace(/\D/g, "")
-              price = parsed ? parseInt(parsed, 10) : 0
-            } else if (typeof salon.priceRange === "number") {
-              price = salon.priceRange
-            } else if (salon.price) {
-              price = Number(salon.price) || 0
-            }
-          } catch (e) {
-            price = 0
-          }
-
-          const matchScore = rec.matchScore ?? rec.score ?? rec.match ?? 0 // could be 0..1 or 0..100
-          // If matchScore looks like 0..1 keep it; convertScoreToRating handles both
-          const rating = convertScoreToRating(matchScore)
-
-          const studioObj = {
-            id: salonId,
-            name: salon.salonName || salon.salonName || salon.name || "Unknown Studio",
-            price: price,
-            rating: rating,
-            location: formatLocation(salon.location || rec.location),
-            services: salon.typesOfMassages || salon.typesOfMassage || salon.types || salon.services || [],
-            imageUrl: salon.salonImage || salon.imageUrl || salon.salonImageUrl || null,
-            score: matchScore,
-            reasons: rec.reasons || [],
-            isSubscribed: salon.isSubscribed || false,
-            ownerId: ownerId,
-          }
-          
-          if (!ownerId) {
-            console.warn(`⚠️ Studio "${studioObj.name}" (${salonId}) has no ownerId!`)
-          } else {
-            console.log(`✅ Studio "${studioObj.name}" has ownerId: ${ownerId}`)
-          }
-          
-          return studioObj
-        })
-
-        setStudios(transformedStudios)
-        console.log(`✅ Loaded ${transformedStudios.length} studios`)
-        // Reset to first card when new data is loaded
-        setCurrentIndex(0)
-
-        if (transformedStudios.length === 0) {
-          setError("No recommendations available. Try making some bookings first!")
+        return {
+          id: salonId,
+          providerType: "salon",
+          name: salon.salonName || salon.name || "Unknown Studio",
+          price: price,
+          rating: rating,
+          location: formatLocation(salon.location),
+          services: salon.typesOfMassages || salon.typesOfMassage || [],
+          imageUrl: salon.salonImage || salon.imageUrl || null,
+          score: matchScore,
+          reasons: rec.reasons || [],
+          isSubscribed: salon.isSubscribed || false,
+          ownerId: ownerId,
+          // Salon-specific fields
+          salonId: salonId,
         }
-      } else {
-        console.error("❌ Invalid response format:", data)
-        throw new Error("Invalid response format")
+      })
+
+      // Transform private massagers to unified format
+      const transformedMassagers = (data.privateMassagers || []).map((massager) => {
+        const massagerId = massager._id || massager.id
+        const ownerId = massager.ownerId
+          ? (typeof massager.ownerId === "object" 
+              ? (massager.ownerId._id || massager.ownerId.toString()) 
+              : String(massager.ownerId))
+          : null
+
+        // For private massagers, we'll use a default score/rating
+        // In the future, this could be calculated based on user preferences
+        const defaultScore = 50 // Neutral score for private massagers
+
+        return {
+          id: massagerId,
+          providerType: "privateMassager",
+          name: massager.name || "Private Massager", // Could be owner name or display name
+          price: 0, // Private massagers don't have price in the schema
+          rating: 0, // Could be calculated from reviews/ratings in the future
+          location: "", // Private massagers don't have location
+          services: [], // Could be derived from occupation or other fields
+          imageUrl: massager.profilePhoto || (massager.photos && massager.photos[0]) || null,
+          score: defaultScore,
+          reasons: [],
+          isSubscribed: massager.subscriptionID ? true : false,
+          ownerId: ownerId,
+          // Private massager-specific fields
+          privateMassagerId: massagerId,
+          gender: massager.gender || null,
+          height: massager.height || null,
+          weight: massager.weight || null,
+          aboutMe: massager.aboutMe || null,
+          occupation: massager.occupation || null,
+          photos: massager.photos || [],
+        }
+      })
+
+      // Combine and prioritize: subscribed providers first, then regular
+      const allProviders = [...transformedSalons, ...transformedMassagers]
+      
+      // Separate into subscribed and non-subscribed
+      const subscribedProviders = allProviders.filter(p => p.isSubscribed)
+      const regularProviders = allProviders.filter(p => !p.isSubscribed)
+
+      // Shuffle within each group for fairness (simple shuffle)
+      const shuffleArray = (array) => {
+        const shuffled = [...array]
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+        }
+        return shuffled
+      }
+
+      const shuffledSubscribed = shuffleArray(subscribedProviders)
+      const shuffledRegular = shuffleArray(regularProviders)
+
+      // Combine with subscribed first
+      const transformedStudios = [...shuffledSubscribed, ...shuffledRegular]
+
+      console.log(`✅ Loaded ${transformedSalons.length} salons and ${transformedMassagers.length} private massagers`)
+      console.log(`✅ Total providers: ${transformedStudios.length} (${shuffledSubscribed.length} subscribed, ${shuffledRegular.length} regular)`)
+
+      setStudios(transformedStudios)
+      setCurrentIndex(0)
+
+      if (transformedStudios.length === 0) {
+        setError("No providers available. Try making some bookings first!")
       }
     } catch (err) {
       console.error("❌ Error fetching recommendations:", err)
@@ -826,9 +855,28 @@ const Homescreen = ({ navigation }) => {
       extrapolate: "clamp",
     })
 
-    // Ensure services array has at least 3 items for UI
-    const services = actualStudio.services || []
-    const displayServices = [services[0] || "Massage", services[1] || "Therapy", services[2] || "Relaxation"]
+    const isPrivateMassager = actualStudio.providerType === "privateMassager"
+
+    // For salons: use services; for private massagers: use occupation/gender/other info
+    let displayTags = []
+    if (isPrivateMassager) {
+      // Build tags from private massager fields
+      if (actualStudio.gender) displayTags.push(actualStudio.gender)
+      if (actualStudio.occupation) displayTags.push(actualStudio.occupation)
+      if (actualStudio.height) displayTags.push(`${actualStudio.height}cm`)
+      // Ensure at least 3 tags for UI consistency
+      while (displayTags.length < 3) {
+        displayTags.push("Massage Therapist")
+      }
+    } else {
+      // Salon: use services
+      const services = actualStudio.services || []
+      displayTags = [
+        services[0] || "Massage",
+        services[1] || "Therapy",
+        services[2] || "Relaxation"
+      ]
+    }
 
     return (
       <Animated.View
@@ -868,14 +916,24 @@ const Homescreen = ({ navigation }) => {
                 </View>
               </View>
             )}
-            <View style={styles.ratingBadge}>
-              <Icon name="star" size={moderateScale(16)} color="#FDB022" />
-              <Text style={styles.ratingText}>{formatText((actualStudio.rating || 0).toFixed(1))}</Text>
-            </View>
+            {/* Only show rating for salons (private massagers don't have ratings yet) */}
+            {!isPrivateMassager && (
+              <View style={styles.ratingBadge}>
+                <Icon name="star" size={moderateScale(16)} color="#FDB022" />
+                <Text style={styles.ratingText}>{formatText((actualStudio.rating || 0).toFixed(1))}</Text>
+              </View>
+            )}
             {actualStudio.isSubscribed && (
               <View style={styles.subscribedBadge}>
                 <Icon name="check-decagram" size={moderateScale(16)} color="#FFFFFF" />
                 <Text style={styles.subscribedText}>Premium</Text>
+              </View>
+            )}
+            {/* Show provider type badge for private massagers */}
+            {isPrivateMassager && (
+              <View style={styles.typeBadge}>
+                <Icon name="account" size={moderateScale(14)} color="#FFFFFF" />
+                <Text style={styles.typeBadgeText}>Private</Text>
               </View>
             )}
           </View>
@@ -885,36 +943,61 @@ const Homescreen = ({ navigation }) => {
               {actualStudio.name}
             </Text>
             <View style={styles.infoRow}>
-              <View style={styles.priceContainer}>
-                <Icon name="currency-usd" size={moderateScale(16)} color="#C97B84" />
-                <Text style={styles.infoText}>
-                  {t("home.from")} ${formatText((actualStudio.price || 0).toString())}
-                </Text>
-              </View>
-              <View style={styles.locationContainer}>
-                <MaterialIcons name="location-on" size={moderateScale(16)} color="#C97B84" />
-                <Text style={styles.infoText} numberOfLines={1}>
-                  {actualStudio.location}
-                </Text>
-              </View>
+              {/* Only show price for salons */}
+              {!isPrivateMassager && (
+                <View style={styles.priceContainer}>
+                  <Icon name="currency-usd" size={moderateScale(16)} color="#C97B84" />
+                  <Text style={styles.infoText}>
+                    {t("home.from")} ${formatText((actualStudio.price || 0).toString())}
+                  </Text>
+                </View>
+              )}
+              {/* Show location for salons, or other info for private massagers */}
+              {isPrivateMassager ? (
+                <View style={styles.locationContainer}>
+                  {actualStudio.height && actualStudio.weight && (
+                    <>
+                      <MaterialIcons name="straighten" size={moderateScale(16)} color="#C97B84" />
+                      <Text style={styles.infoText} numberOfLines={1}>
+                        {actualStudio.height}cm • {actualStudio.weight}kg
+                      </Text>
+                    </>
+                  )}
+                </View>
+              ) : (
+                <View style={styles.locationContainer}>
+                  <MaterialIcons name="location-on" size={moderateScale(16)} color="#C97B84" />
+                  <Text style={styles.infoText} numberOfLines={1}>
+                    {actualStudio.location}
+                  </Text>
+                </View>
+              )}
             </View>
+            {/* Show aboutMe for private massagers if available */}
+            {isPrivateMassager && actualStudio.aboutMe && (
+              <View style={styles.aboutMeContainer}>
+                <Text style={styles.aboutMeText} numberOfLines={2}>
+                  {actualStudio.aboutMe}
+                </Text>
+              </View>
+            )}
             <View style={styles.tagsContainer}>
               <View style={styles.tagsRow}>
                 <View style={styles.tag}>
                   <Text style={styles.tagText} numberOfLines={1}>
-                    {displayServices[0]}
+                    {displayTags[0]}
                   </Text>
                 </View>
                 <View style={styles.tag}>
                   <Text style={styles.tagText} numberOfLines={1}>
-                    {displayServices[1]}
+                    {displayTags[1]}
                   </Text>
                 </View>
               </View>
               <View style={styles.tagsRow}>
                 <View style={styles.tag}>
                   <Text style={styles.tagText} numberOfLines={1}>
-                    {displayServices[2]}
+                    {displayTags[2]}
                   </Text>
                 </View>
               </View>
@@ -1041,19 +1124,19 @@ const Homescreen = ({ navigation }) => {
 }
 
 /**
- * Send booking request for a studio.
+ * Send booking request for a studio or private massager.
  * - Uses auth().currentUser for userId.
- * - Tries to use studio.ownerId if available. If not, fetches salon details from /salons/{salonId} (the backend now includes ownerId).
+ * - Handles both salon and private massager provider types.
  */
 const sendBookingRequest = async (studio) => {
   try {
-    console.log("🔍 Starting booking request for studio:", JSON.stringify(studio, null, 2))
-    console.log("🔍 Studio ownerId:", studio.ownerId)
-    console.log("🔍 Studio keys:", Object.keys(studio))
+    console.log("🔍 Starting booking request for provider:", JSON.stringify(studio, null, 2))
+    console.log("🔍 Provider type:", studio.providerType)
+    console.log("🔍 Provider ownerId:", studio.ownerId)
     
     if (!studio) {
-      console.error("❌ No studio provided")
-      return { success: false, error: "No studio information provided" }
+      console.error("❌ No provider information provided")
+      return { success: false, error: "No provider information provided" }
     }
 
     const currentUser = auth().currentUser
@@ -1064,13 +1147,15 @@ const sendBookingRequest = async (studio) => {
     const firebaseUID = currentUser.uid
     console.log("👤 User UID:", firebaseUID)
 
-    // Determine salonId from studio
-    const salonId = studio.id || studio._id || studio.salonId
-    if (!salonId) {
-      console.error("❌ No salon ID found in studio:", studio)
-      return { success: false, error: "Salon ID is missing. Please try another salon." }
+    // Determine provider type
+    const isPrivateMassager = studio.providerType === "privateMassager"
+    const providerId = studio.id || studio._id || (isPrivateMassager ? studio.privateMassagerId : studio.salonId)
+    
+    if (!providerId) {
+      console.error("❌ No provider ID found:", studio)
+      return { success: false, error: `${isPrivateMassager ? "Private massager" : "Salon"} ID is missing. Please try another provider.` }
     }
-    console.log("🏢 Salon ID:", salonId)
+    console.log(`🏢 ${isPrivateMassager ? "Private Massager" : "Salon"} ID:`, providerId)
 
     // Fetch user profile data from Firestore
     let userName = ""
@@ -1100,131 +1185,75 @@ const sendBookingRequest = async (studio) => {
     }
     console.log("📧 User email:", userEmail)
 
-    // Determine ownerId: prefer studio.ownerId, else fetch salon details from backend
-    let salonOwnerId = studio.ownerId || null
-    console.log("🔍 Initial salonOwnerId from studio:", salonOwnerId)
+    // Determine ownerId: prefer studio.ownerId, else fetch from backend
+    let ownerId = studio.ownerId || null
+    console.log("🔍 Initial ownerId from provider:", ownerId)
 
-    if (!salonOwnerId) {
+    if (!ownerId && !isPrivateMassager) {
+      // For salons, try to fetch ownerId from backend if not available
       console.log("🔍 Fetching salon owner ID from backend...")
-      console.log("🌐 API_BASE_URL:", API_BASE_URL)
-      console.log("🌐 Fetching from:", `${API_BASE_URL}/api/v1/salons/${salonId}/with-owner`)
-      
-      // Try the /with-owner endpoint first as it populates ownerId
       try {
-        const salonWithOwnerResponse = await fetch(`${API_BASE_URL}/api/v1/salons/${salonId}/with-owner`, {
+        const salonResponse = await fetch(`${API_BASE_URL}/api/v1/salons/${providerId}/with-owner`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
           },
         })
 
-        console.log("📥 /with-owner response status:", salonWithOwnerResponse.status)
-
-        if (salonWithOwnerResponse.ok) {
-          const salonJson = await salonWithOwnerResponse.json()
-          console.log("📥 /with-owner response data:", JSON.stringify(salonJson, null, 2))
+        if (salonResponse.ok) {
+          const salonJson = await salonResponse.json()
           const salon = salonJson.data || salonJson
-          console.log("📥 Extracted salon object:", JSON.stringify(salon, null, 2))
-
-          // Extract ownerId - handle various formats (can be object if populated)
           if (salon?.ownerId) {
-            if (typeof salon.ownerId === "object") {
-              // If it's an object (populated owner), try to get _id or toString()
-              salonOwnerId = salon.ownerId._id || salon.ownerId.toString() || String(salon.ownerId)
-            } else {
-              // If it's a string or other primitive, convert to string
-              salonOwnerId = String(salon.ownerId)
-            }
-            console.log("✅ Found owner ID from /with-owner:", salonOwnerId)
-          } else {
-            console.warn("⚠️ No ownerId in /with-owner response. Salon keys:", Object.keys(salon))
+            ownerId = typeof salon.ownerId === "object"
+              ? (salon.ownerId._id || salon.ownerId.toString())
+              : String(salon.ownerId)
+            console.log("✅ Found owner ID from backend:", ownerId)
           }
-        } else {
-          const errorText = await salonWithOwnerResponse.text().catch(() => "Could not read error")
-          console.warn("⚠️ /with-owner endpoint returned:", salonWithOwnerResponse.status, errorText)
         }
       } catch (err) {
-        console.error("❌ Error fetching from /with-owner:", err.message)
-        console.error("❌ Full error:", err)
+        console.error("❌ Error fetching salon owner ID:", err)
       }
+    } else if (!ownerId && isPrivateMassager) {
+      // For private massagers, try to fetch ownerId from backend
+      console.log("🔍 Fetching private massager owner ID from backend...")
+      try {
+        const massagerResponse = await fetch(`${API_BASE_URL}/api/private-massagers/${providerId}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
 
-      // If still no ownerId, try regular endpoint as fallback
-      if (!salonOwnerId) {
-        console.log("🔍 Trying regular salon endpoint...")
-        try {
-          const salonResponse = await fetch(`${API_BASE_URL}/api/v1/salons/${salonId}`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          })
-
-          console.log("📥 Regular endpoint response status:", salonResponse.status)
-
-          if (salonResponse.ok) {
-            const salonJson = await salonResponse.json()
-            console.log("📥 Regular endpoint response data:", JSON.stringify(salonJson, null, 2))
-            const salon = salonJson.data || salonJson
-            console.log("📥 Extracted salon from regular endpoint:", JSON.stringify(salon, null, 2))
-
-            // Extract ownerId - handle various formats
-            if (salon?.ownerId) {
-              if (typeof salon.ownerId === "object") {
-                salonOwnerId = salon.ownerId._id || salon.ownerId.toString() || String(salon.ownerId)
-              } else {
-                salonOwnerId = String(salon.ownerId)
-              }
-              console.log("✅ Found owner ID from regular endpoint:", salonOwnerId)
-            } else {
-              console.warn("⚠️ No ownerId in regular endpoint response. Salon keys:", Object.keys(salon))
-              // Try alternative field names
-              if (salon.owner) {
-                salonOwnerId = salon.owner._id || salon.owner.toString() || String(salon.owner)
-                console.log("✅ Found owner ID from salon.owner:", salonOwnerId)
-              } else if (salon.salonOwnerId) {
-                salonOwnerId = String(salon.salonOwnerId)
-                console.log("✅ Found owner ID from salon.salonOwnerId:", salonOwnerId)
-              }
-            }
-          } else {
-            const errorText = await salonResponse.text().catch(() => "Could not read error")
-            console.warn("⚠️ Regular salon endpoint returned:", salonResponse.status, errorText)
+        if (massagerResponse.ok) {
+          const massagerJson = await massagerResponse.json()
+          const massager = massagerJson.data || massagerJson
+          if (massager?.ownerId) {
+            ownerId = typeof massager.ownerId === "object"
+              ? (massager.ownerId._id || massager.ownerId.toString())
+              : String(massager.ownerId)
+            console.log("✅ Found owner ID from backend:", ownerId)
           }
-        } catch (err) {
-          console.error("❌ Error fetching from regular endpoint:", err.message)
-          console.error("❌ Full error:", err)
         }
+      } catch (err) {
+        console.error("❌ Error fetching private massager owner ID:", err)
       }
-    } else {
-      // Convert ownerId to string if it's not already
-      salonOwnerId = typeof salonOwnerId === "object"
-        ? (salonOwnerId._id || salonOwnerId.toString() || String(salonOwnerId))
-        : String(salonOwnerId)
-      console.log("✅ Using owner ID from studio:", salonOwnerId)
     }
 
-    if (!salonOwnerId) {
-      console.error("❌ Could not find salonOwnerId after all attempts")
-      console.error("❌ Studio object:", JSON.stringify(studio, null, 2))
-      console.error("❌ Salon ID used:", salonId)
-      console.error("❌ API_BASE_URL:", API_BASE_URL)
-      
-      // Check if using localhost (won't work on physical devices)
-      if (API_BASE_URL.includes("localhost")) {
-        return {
-          success: false,
-          error: {
-            error: "Network Error: localhost won't work on physical devices",
-            message: "Please update API_BASE_URL to use your computer's IP address (e.g., http://192.168.x.x:3000). Check console for details."
-          }
-        }
-      }
-      
+    // Convert ownerId to string if it's not already
+    if (ownerId) {
+      ownerId = typeof ownerId === "object"
+        ? (ownerId._id || ownerId.toString() || String(ownerId))
+        : String(ownerId)
+      console.log("✅ Using owner ID:", ownerId)
+    }
+
+    if (!ownerId) {
+      console.error("❌ Could not find ownerId")
       return {
         success: false,
         error: {
-          error: "Salon owner information is missing. This salon may not be properly configured.",
-          message: "Unable to send booking request. Please try another salon or contact support. Check console for details."
+          error: `${isPrivateMassager ? "Private massager" : "Salon"} owner information is missing.`,
+          message: "Unable to send booking request. Please try another provider or contact support."
         }
       }
     }
@@ -1234,23 +1263,30 @@ const sendBookingRequest = async (studio) => {
     const requestedDateTime = new Date()
     requestedDateTime.setHours(requestedDateTime.getHours() + 1)
 
+    // Build booking data based on provider type
     const bookingData = {
-      salonId: salonId,
-      salonOwnerId: salonOwnerId, // Note: backend expects salonOwnerId, not ownerId
-      firebaseUID: firebaseUID, // Note: backend expects firebaseUID, not userId
+      firebaseUID: firebaseUID,
       name: userName,
       email: userEmail,
       requestedDateTime: requestedDateTime.toISOString(),
       durationMinutes: 60, // Default 60 minutes
-      // Optional fields
       age: 0, // Can be updated later if user provides this info
       weightKg: 0, // Can be updated later if user provides this info
     }
 
-    console.log("📤 Sending booking data:", bookingData)
-    console.log("🌐 API URL:", `${API_BASE_URL}/api/v1/bookings/create-booking`)
+    // Add provider-specific fields
+    if (isPrivateMassager) {
+      bookingData.privateMassagerId = providerId
+      bookingData.salonOwnerId = ownerId // Backend expects salonOwnerId field even for private massagers
+    } else {
+      bookingData.salonId = providerId
+      bookingData.salonOwnerId = ownerId
+    }
 
-    const bookingResponse = await fetch(`${API_BASE_URL}/api/v1/bookings/create-booking`, {
+    console.log("📤 Sending booking data:", bookingData)
+    console.log("🌐 API URL:", `${API_BASE_URL}/api/v1/bookings/request`)
+
+    const bookingResponse = await fetch(`${API_BASE_URL}/api/v1/bookings/request`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -1551,6 +1587,23 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#FFFFFF",
   },
+  typeBadge: {
+    position: "absolute",
+    top: moderateScale(12),
+    left: moderateScale(12),
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#7B68EE",
+    paddingHorizontal: moderateScale(10),
+    paddingVertical: moderateScale(5),
+    borderRadius: moderateScale(50),
+    gap: moderateScale(4),
+  },
+  typeBadgeText: {
+    fontSize: scaleFont(11),
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
   detailsContainer: {
     flex: 1,
     paddingHorizontal: moderateScale(20),
@@ -1586,6 +1639,16 @@ const styles = StyleSheet.create({
     color: "#C97B84",
     fontWeight: "500",
     flexShrink: 1,
+  },
+  aboutMeContainer: {
+    marginBottom: moderateScale(8),
+    paddingVertical: moderateScale(6),
+  },
+  aboutMeText: {
+    fontSize: scaleFont(11),
+    color: "#6B5B5B",
+    fontStyle: "italic",
+    lineHeight: scaleFont(16),
   },
   tagsContainer: {
     gap: moderateScale(6),

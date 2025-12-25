@@ -18,7 +18,7 @@ import firestore from '@react-native-firebase/firestore';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 // IMPORTANT: Update this to your actual backend URL
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = process.env.API_BASE_URL || "http://192.168.18.47:3000";
 const USE_BACKEND_API = false; // Set to true once backend endpoint is ready
 
 const NotificationsScreen = ({ navigation }) => {
