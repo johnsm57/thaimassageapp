@@ -1,7 +1,7 @@
 // API utility for chat backend communication
 import { CHAT_CONFIG } from '../config/chatConfig';
 
-const API_BASE_URL = CHAT_CONFIG.API_URL;
+const API_BASE_URL = CHAT_CONFIG.API_URL ;
 
 export const chatApi = {
   // User endpoints

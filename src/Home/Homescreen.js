@@ -59,7 +59,12 @@ const CARD_RAISE = verticalScale(40)
 // For Android emulator: use "http://10.0.2.2:3000"
 // For physical device: use your computer's IP (e.g., "http://192.168.x.x:3000")
 // Find your IP: Mac/Linux: ifconfig | grep "inet " | grep -v 127.0.0.1
-const API_BASE_URL = process.env.API_BASE_URL || "http://192.168.18.47:3000"
+// IMPORTANT: Update this to your actual backend URL
+// ⚠️ WARNING: localhost won't work on physical devices!
+// For Android emulator: use "http://10.0.2.2:3000" 
+// For physical device: use your computer's IP (e.g., "http://192.168.18.51:3000")
+// Current IP: 192.168.18.51 (update if changed)
+const API_BASE_URL = process.env.API_BASE_URL || "http://192.168.18.51:3000"
 
 const Homescreen = ({ navigation }) => {
   const { currentLanguage, t, formatText, translateDynamic } = useLanguage()
@@ -355,6 +360,10 @@ const Homescreen = ({ navigation }) => {
       const latitude = 24.8607
       const longitude = 67.0011
 
+      console.log("🌐 API_BASE_URL:", API_BASE_URL)
+      console.log("🌐 Fetching salon recommendations from:", `${API_BASE_URL}/api/v1/recommendations/${uid}?limit=20&latitude=${latitude}&longitude=${longitude}`)
+      console.log("🌐 Fetching private massagers from:", `${API_BASE_URL}/api/private-massagers?limit=20`)
+
       // Fetch both salon recommendations and private massagers in parallel
       const [salonResponse, privateMassagerResponse] = await Promise.all([
         fetch(`${API_BASE_URL}/api/v1/recommendations/${uid}?limit=20&latitude=${latitude}&longitude=${longitude}`, {
@@ -363,7 +372,8 @@ const Homescreen = ({ navigation }) => {
             "Content-Type": "application/json",
           },
         }).catch(err => {
-          console.warn("⚠️ Error fetching salon recommendations:", err)
+          console.error("❌ Error fetching salon recommendations:", err.message)
+          console.error("❌ Full error:", err)
           return null
         }),
         fetch(`${API_BASE_URL}/api/private-massagers?limit=20`, {
@@ -372,28 +382,47 @@ const Homescreen = ({ navigation }) => {
             "Content-Type": "application/json",
           },
         }).catch(err => {
-          console.warn("⚠️ Error fetching private massagers:", err)
+          console.error("❌ Error fetching private massagers:", err.message)
+          console.error("❌ Full error:", err)
           return null
         }),
       ])
+      
+      console.log("📡 Salon response status:", salonResponse?.status || "null/undefined")
+      console.log("📡 Private massager response status:", privateMassagerResponse?.status || "null/undefined")
 
       const fetchTime = Date.now() - startTime
       console.log(`⏱️ Fetch took ${fetchTime}ms`)
 
       // Process salon recommendations
       let salonRecommendations = []
-      if (salonResponse && salonResponse.ok) {
-        const salonData = await salonResponse.json()
-        console.log("📥 Received salon recommendations:", salonData)
-        salonRecommendations = salonData.recommendations || salonData.data || []
+      if (salonResponse) {
+        if (salonResponse.ok) {
+          const salonData = await salonResponse.json()
+          console.log("📥 Received salon recommendations:", salonData)
+          salonRecommendations = salonData.recommendations || salonData.data || []
+        } else {
+          const errorText = await salonResponse.text().catch(() => "Could not read error")
+          console.warn("⚠️ Salon recommendations API error:", salonResponse.status, errorText)
+        }
+      } else {
+        console.warn("⚠️ Salon recommendations fetch failed or returned null")
       }
 
       // Process private massagers
       let privateMassagers = []
-      if (privateMassagerResponse && privateMassagerResponse.ok) {
-        const massagerData = await privateMassagerResponse.json()
-        console.log("📥 Received private massagers:", massagerData)
-        privateMassagers = massagerData.data || []
+      if (privateMassagerResponse) {
+        if (privateMassagerResponse.ok) {
+          const massagerData = await privateMassagerResponse.json()
+          console.log("📥 Received private massagers:", massagerData)
+          privateMassagers = massagerData.data || []
+          console.log(`✅ Found ${privateMassagers.length} private massagers`)
+        } else {
+          const errorText = await privateMassagerResponse.text().catch(() => "Could not read error")
+          console.warn("⚠️ Private massagers API error:", privateMassagerResponse.status, errorText)
+        }
+      } else {
+        console.warn("⚠️ Private massagers fetch failed or returned null")
       }
 
       const data = { success: true, salonRecommendations, privateMassagers }
