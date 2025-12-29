@@ -65,6 +65,10 @@ export default {
     at: 'at',
     recentChats: 'Recent Chats -',
     thankYouForBook: 'thank you for book.....',
+    now: 'Now',
+    ago: 'ago',
+    noMessages: 'No messages yet',
+    noConversations: 'No conversations yet',
   },
   chat: {
     typing: 'Typing...',

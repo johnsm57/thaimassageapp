@@ -65,6 +65,10 @@ export default {
     at: 'เวลา',
     recentChats: 'แชทล่าสุด -',
     thankYouForBook: 'ขอบคุณสำหรับการจอง.....',
+    now: 'ตอนนี้',
+    ago: 'ที่แล้ว',
+    noMessages: 'ยังไม่มีข้อความ',
+    noConversations: 'ยังไม่มีการสนทนา',
   },
   chat: {
     typing: 'กำลังพิมพ์...',

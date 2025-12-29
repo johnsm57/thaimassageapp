@@ -8,143 +8,184 @@ import {
   StatusBar,
   Platform,
   ScrollView,
-  SafeAreaView,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import { useLanguage } from '../context/LanguageContext';
+import { chatApi } from '../utils/chatApi';
 import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 // Import your existing BottomNav component
 import BottomNav from '../component/BottomNav';
 
-// Backend URL
-const API_BASE_URL = 'https://luci-server-useast.duckdns.org';
-
 const MessagesScreen = ({ navigation }) => {
   const { currentLanguage, t, formatText, translateDynamic } = useLanguage();
-  const insets = useSafeAreaInsets();
   
-  // Initialize with empty data - will be fetched from API
-  const [currentBooking, setCurrentBooking] = useState(null);
-  const [recentChats, setRecentChats] = useState([]);
+  const [currentUserId, setCurrentUserId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [conversations, setConversations] = useState([]);
+  const [currentBooking, setCurrentBooking] = useState(null);
 
   const [translatedCurrentBooking, setTranslatedCurrentBooking] = useState(null);
   const [translatedRecentChats, setTranslatedRecentChats] = useState([]);
 
-  // Fetch conversations from API
+  // Get current user ID
   useEffect(() => {
-    fetchConversations();
+    const currentUser = auth().currentUser;
+    if (currentUser) {
+      setCurrentUserId(currentUser.uid);
+    }
   }, []);
 
-  const fetchConversations = async () => {
+  // Load conversations from backend
+  useEffect(() => {
+    if (currentUserId) {
+      loadConversations();
+    }
+  }, [currentUserId]);
+
+  // Translate conversations when language changes
+  useEffect(() => {
+    translateConversations();
+  }, [currentLanguage, conversations]);
+
+  const loadConversations = async () => {
     try {
       setLoading(true);
-      const currentUser = auth().currentUser;
-      if (!currentUser) {
+      
+      // First, ensure user is registered in chat backend
+      await ensureUserRegistered();
+      
+      // Small delay to ensure user is fully registered
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Load conversations
+      const conversationsData = await chatApi.getConversations(currentUserId);
+      
+      // Handle empty array (no conversations yet)
+      if (!Array.isArray(conversationsData)) {
+        console.warn('Conversations data is not an array:', conversationsData);
+        setConversations([]);
         setLoading(false);
         return;
       }
-
-      const firebaseUID = currentUser.uid;
-
-      // Fetch conversations from backend API
-      const response = await fetch(
-        `${API_BASE_URL}/api/v1/conversations/${firebaseUID}`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.success) {
-        // Set conversations/chats
-        const conversations = data.conversations || data.chats || [];
-        setRecentChats(conversations);
-
-        // Set current booking if available
-        if (data.currentBooking) {
-          setCurrentBooking(data.currentBooking);
-        } else {
-          // Try to get current booking from the first accepted booking
-          const acceptedBooking = conversations.find(
-            (chat) => chat.status === 'accepted' || chat.bookingStatus === 'accepted'
-          );
-          if (acceptedBooking) {
-            setCurrentBooking({
-              id: acceptedBooking.id || acceptedBooking._id,
-              name: acceptedBooking.salonName || acceptedBooking.name,
-              time: acceptedBooking.appointmentTime || acceptedBooking.time,
-              avatar: acceptedBooking.salonImage || acceptedBooking.avatar,
-              conversationId: acceptedBooking.conversationId || acceptedBooking.id,
-              receiverId: acceptedBooking.salonOwnerId || acceptedBooking.receiverId,
-            });
-          } else {
-            setCurrentBooking(null);
-          }
-        }
-      } else {
-        setRecentChats([]);
-        setCurrentBooking(null);
+      
+      // Format conversations
+      const formattedConversations = conversationsData.map((conv) => {
+        // Find the other participant (not the current user)
+        // Compare using MongoDB _id (ObjectId) or firebaseUid
+        const otherParticipant = conv.participants?.find((p) => {
+          const participantId = typeof p === 'object' ? (p._id?.toString() || p.firebaseUid) : p;
+          const currentId = typeof currentUserId === 'string' && currentUserId.length === 24 
+            ? currentUserId 
+            : currentUserId;
+          return participantId !== currentId && participantId !== currentUserId;
+        });
+        
+        const participantData = typeof otherParticipant === 'object' 
+          ? otherParticipant 
+          : { _id: otherParticipant, name: 'Unknown User', avatar: '' };
+        
+        const lastMessage = conv.lastMessage || {};
+        const lastMessageText = lastMessage.text || '';
+        const lastMessageTime = lastMessage.createdAt || conv.lastMessageTime || new Date();
+        
+        // Use firebaseUid if available, otherwise use _id
+        const receiverId = participantData.firebaseUid || participantData._id?.toString() || participantData._id;
+        
+        return {
+          id: conv._id,
+          conversationId: conv._id,
+          name: participantData.name || 'Unknown',
+          message: lastMessageText || t('messages.noMessages'),
+          time: formatTime(lastMessageTime),
+          avatar: participantData.avatar || 'https://via.placeholder.com/60',
+          receiverId: receiverId,
+          receiverMongoId: participantData._id?.toString() || participantData._id, // Store MongoDB ID separately
+          isOnline: participantData.isOnline || false,
+        };
+      });
+      
+      setConversations(formattedConversations);
+      
+      // Set first conversation as current booking if available
+      if (formattedConversations.length > 0) {
+        setCurrentBooking(formattedConversations[0]);
       }
     } catch (error) {
-      console.error('Error fetching conversations:', error);
-      // On error, set empty arrays (user will see empty state)
-      setRecentChats([]);
-      setCurrentBooking(null);
+      console.error('Error loading conversations:', error);
+      // Don't show alert for empty conversations - just set empty array
+      if (error.message && error.message.includes('User not found')) {
+        console.log('User not registered yet, returning empty conversations');
+        setConversations([]);
+      } else {
+        // Only show alert for actual errors
+        console.error('Failed to load conversations:', error);
+        setConversations([]);
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  // Translate current booking when language changes
-  useEffect(() => {
-    if (!currentBooking) {
-      setTranslatedCurrentBooking(null);
-      return;
-    }
+  const ensureUserRegistered = async () => {
+    try {
+      const currentUser = auth().currentUser;
+      if (!currentUser) return;
 
-    const translateBooking = async () => {
-      if (currentLanguage === 'th') {
-        const translatedName = await translateDynamic(currentBooking.name);
-        const translatedTime = await translateTime(currentBooking.time);
+      // Get user data from Firestore
+      const userDoc = await firestore()
+        .collection('Useraccount')
+        .doc(currentUser.uid)
+        .get();
+
+      if (userDoc.exists) {
+        const userData = userDoc.data();
         
-        setTranslatedCurrentBooking({
-          ...currentBooking,
-          name: translatedName,
-          time: translatedTime,
-        });
-      } else {
-        setTranslatedCurrentBooking(currentBooking);
+        // Try to get user from chat backend
+        let chatUser = null;
+        try {
+          chatUser = await chatApi.getUser(currentUser.uid);
+          console.log('✅ User found in chat backend:', chatUser._id);
+        } catch (error) {
+          console.log('⚠️ User not found, registering...', error.message);
+          // User doesn't exist in chat backend, register them
+          try {
+            const registrationResult = await chatApi.registerUser({
+              firebaseUid: currentUser.uid, // Add Firebase UID
+              name: userData.name || currentUser.displayName || 'User',
+              email: userData.email || currentUser.email || `${currentUser.uid}@example.com`,
+              phone: userData.phone || '0000000000', // Provide default phone
+              avatar: userData.profileImage || userData.photoURL || '',
+            });
+            console.log('✅ User registered in chat backend:', registrationResult.user?._id);
+            chatUser = registrationResult.user;
+          } catch (regError) {
+            // If registration fails with "already exists", try to get user again
+            if (regError.message && regError.message.includes('already exists')) {
+              console.log('⚠️ User already exists, fetching again...');
+              chatUser = await chatApi.getUser(currentUser.uid);
+            } else {
+              throw regError;
+            }
+          }
+        }
       }
-    };
+    } catch (error) {
+      console.error('Error ensuring user registration:', error);
+    }
+  };
 
-    translateBooking();
-  }, [currentLanguage, currentBooking]);
-
-  // Translate recent chats when language changes
-  useEffect(() => {
-    const translateChats = async () => {
-      if (recentChats.length === 0) {
-        setTranslatedRecentChats([]);
-        return;
-      }
-
+  const translateConversations = async () => {
       if (currentLanguage === 'th') {
         const translated = await Promise.all(
-          recentChats.map(async (chat) => {
+        conversations.map(async (chat) => {
             const translatedName = await translateDynamic(chat.name);
-            const translatedMessage = await translateDynamic(chat.message);
+          const translatedMessage = await translateDynamic(chat.message);
             const translatedTime = await translateTime(chat.time);
 
             return {
@@ -156,13 +197,21 @@ const MessagesScreen = ({ navigation }) => {
           })
         );
         setTranslatedRecentChats(translated);
-      } else {
-        setTranslatedRecentChats(recentChats);
+      
+      if (currentBooking) {
+        const translatedBookingName = await translateDynamic(currentBooking.name);
+        const translatedBookingTime = await translateTime(currentBooking.time);
+        setTranslatedCurrentBooking({
+          ...currentBooking,
+          name: translatedBookingName,
+          time: translatedBookingTime,
+        });
       }
-    };
-
-    translateChats();
-  }, [currentLanguage, recentChats]);
+      } else {
+      setTranslatedRecentChats(conversations);
+      setTranslatedCurrentBooking(currentBooking);
+    }
+  };
 
   const translateTime = async (time) => {
     if (currentLanguage === 'th') {
@@ -182,23 +231,64 @@ const MessagesScreen = ({ navigation }) => {
     return time;
   };
 
-  const handleChatPress = (chat) => {
-    const currentUser = auth().currentUser;
-    if (!currentUser) {
+  const handleChatPress = async (chat) => {
+    if (!currentUserId) {
+      Alert.alert(t('alerts.error'), 'User not logged in');
       return;
     }
 
-    // Navigate to chat screen
+    try {
+      // Ensure conversation exists or create it
+      let conversationId = chat.conversationId;
+      
+      if (!conversationId && chat.receiverId) {
+        const conversation = await chatApi.createOrGetConversation(
+          currentUserId,
+          chat.receiverId
+        );
+        conversationId = conversation._id;
+      }
+
+      // Navigate to chat screen
     navigation.navigate('chat', {
-      conversationId: chat.conversationId || null,
-      receiverId: chat.receiverId || chat.id,
+        conversationId: conversationId,
+        receiverId: chat.receiverId,
       receiverName: chat.name,
-      currentUserId: currentUser.uid,
-    });
+        currentUserId: currentUserId,
+      });
+    } catch (error) {
+      console.error('Error opening chat:', error);
+      Alert.alert(t('alerts.error'), 'Failed to open chat');
+    }
+  };
+
+  const formatTime = (timestamp) => {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = now - date;
+    const minutes = Math.floor(diff / 60000);
+
+    if (minutes < 1) return t('messages.now');
+    if (minutes < 60) return `${minutes}m ${t('messages.ago')}`;
+    
+    const hours = date.getHours();
+    const minutes2 = date.getMinutes();
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const formattedHours = hours % 12 || 12;
+    const formattedMinutes = minutes2 < 10 ? `0${minutes2}` : minutes2;
+    
+    const timeString = `${formattedHours}:${formattedMinutes} ${period}`;
+    
+    if (currentLanguage === 'th') {
+      return formatText(timeString.replace('AM', 'น.').replace('PM', 'น.'));
+    }
+    
+    return timeString;
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#EDE5DD" />
 
       {/* Header */}
@@ -206,7 +296,7 @@ const MessagesScreen = ({ navigation }) => {
         colors={['#DEAAB2', '#FFDDE5']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={[styles.header, { paddingTop: insets.top + (Platform.OS === 'ios' ? 8 : 16) }]}
+        style={styles.header}
       >
         <View style={styles.headerContent}>
           <View style={styles.headerTextContainer}>
@@ -216,32 +306,37 @@ const MessagesScreen = ({ navigation }) => {
 
         {/* Current Booking in Header */}
         {translatedCurrentBooking && (
-          <View style={styles.currentBookingInHeader}>
-            <Text style={styles.currentBookingLabel}>
-              {t('messages.currentBooking')}
-            </Text>
-            <TouchableOpacity
-              style={styles.currentBookingRow}
-              onPress={() => handleChatPress(translatedCurrentBooking)}
-              activeOpacity={0.7}
-            >
-              <Image
-                source={{ uri: translatedCurrentBooking.avatar }}
-                style={styles.currentBookingAvatar}
-              />
-              <View style={styles.currentBookingTextContainer}>
-                <Text style={styles.currentBookingName}>
-                  {translatedCurrentBooking.name}
-                </Text>
-                <Text style={styles.currentBookingTime}>
-                  {t('messages.at')} {translatedCurrentBooking.time}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          </View>
+        <View style={styles.currentBookingInHeader}>
+          <Text style={styles.currentBookingLabel}>
+            {t('messages.currentBooking')}
+          </Text>
+          <TouchableOpacity
+            style={styles.currentBookingRow}
+            onPress={() => handleChatPress(translatedCurrentBooking)}
+            activeOpacity={0.7}
+          >
+            <Image
+              source={{ uri: translatedCurrentBooking.avatar }}
+              style={styles.currentBookingAvatar}
+            />
+            <View style={styles.currentBookingTextContainer}>
+              <Text style={styles.currentBookingName}>
+                {translatedCurrentBooking.name}
+              </Text>
+              <Text style={styles.currentBookingTime}>
+                {t('messages.at')} {translatedCurrentBooking.time}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
         )}
       </LinearGradient>
 
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#D96073" />
+        </View>
+      ) : (
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -250,55 +345,41 @@ const MessagesScreen = ({ navigation }) => {
         {/* Recent Chats Section */}
         <View style={styles.recentChatsSection}>
           <Text style={styles.sectionTitle}>{t('messages.recentChats')}</Text>
-          {loading ? (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>{t('') || 'Loading...'}</Text>
-            </View>
-          ) : translatedRecentChats.length > 0 ? (
-            translatedRecentChats.map((chat) => (
-              <TouchableOpacity
-                key={chat.id}
-                style={styles.chatItem}
-                onPress={() => handleChatPress(chat)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.chatAvatarContainer}>
-                  {chat.avatar ? (
-                    <Image source={{ uri: chat.avatar }} style={styles.chatAvatar} />
-                  ) : (
-                    <View style={[styles.chatAvatar, styles.avatarPlaceholder]}>
-                      <Icon name="account" size={24} color="#D4A5B3" />
-                    </View>
-                  )}
+            {translatedRecentChats.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>{t('messages.noConversations')}</Text>
+              </View>
+            ) : (
+              translatedRecentChats.map((chat) => (
+            <TouchableOpacity
+              key={chat.id}
+              style={styles.chatItem}
+              onPress={() => handleChatPress(chat)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.chatAvatarContainer}>
+                <Image source={{ uri: chat.avatar }} style={styles.chatAvatar} />
+                    {chat.isOnline && <View style={styles.onlineIndicator} />}
+              </View>
+              <View style={styles.chatContent}>
+                <View style={styles.chatHeader}>
+                  <Text style={styles.chatName}>{chat.name}</Text>
+                  <Text style={styles.chatTime}>{chat.time}</Text>
                 </View>
-                <View style={styles.chatContent}>
-                  <View style={styles.chatHeader}>
-                    <Text style={styles.chatName}>{chat.name}</Text>
-                    <Text style={styles.chatTime}>{chat.time}</Text>
-                  </View>
-                  <Text style={styles.chatMessage} numberOfLines={1}>
-                    {chat.message}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))
-          ) : (
-            <View style={styles.emptyContainer}>
-              <Icon name="message-outline" size={64} color="#D4A5B3" />
-              <Text style={styles.emptyText}>
-                {t('') || 'No messages yet'}
-              </Text>
-              <Text style={styles.emptySubtext}>
-                {t('') || 'Your conversations will appear here'}
-              </Text>
-            </View>
-          )}
+                    <Text style={styles.chatMessage} numberOfLines={1}>
+                      {chat.message}
+                    </Text>
+              </View>
+            </TouchableOpacity>
+              ))
+            )}
         </View>
       </ScrollView>
+      )}
 
       {/* Bottom Navigation */}
       <BottomNav navigation={navigation} active="messages" />
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -306,6 +387,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#EDE5DD',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   scrollView: {
     flex: 1,
@@ -319,6 +401,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     borderBottomLeftRadius: 42,
     borderBottomRightRadius: 42,
+    paddingTop: Platform.OS === 'ios' ? 44 : 32,
     shadowColor: '#D7B5BA',
     shadowOffset: {
       width: 4,
@@ -426,6 +509,34 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     backgroundColor: '#D4A5B3',
   },
+  chatAvatarContainer: {
+    position: 'relative',
+  },
+  onlineIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#4CAF50',
+    borderWidth: 2,
+    borderColor: '#FFF6EF',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#9B8B8F',
+    textAlign: 'center',
+  },
   chatContent: {
     flex: 1,
   },
@@ -447,31 +558,6 @@ const styles = StyleSheet.create({
   chatMessage: {
     fontSize: 14,
     color: '#6B5B60',
-  },
-  avatarPlaceholder: {
-    backgroundColor: '#F0E5E9',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 100,
-    paddingHorizontal: 40,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#6B5B60',
-    marginTop: 16,
-    textAlign: 'center',
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#9B8B8F',
-    marginTop: 8,
-    textAlign: 'center',
   },
 });
 

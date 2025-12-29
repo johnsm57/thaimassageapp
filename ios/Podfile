@@ -8,6 +8,10 @@ require Pod::Executable.execute_command('node', ['-p',
 platform :ios, min_ios_version_supported
 prepare_react_native_project!
 
+# Enable modular headers globally for Firebase Swift pods
+# We'll exclude React Native pods that conflict
+use_modular_headers!
+
 linkage = ENV['USE_FRAMEWORKS']
 if linkage != nil
   Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
@@ -19,7 +23,6 @@ target 'thaimassageapp' do
 
   use_react_native!(
     :path => config[:reactNativePath],
-    # An absolute path to your application root.
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
@@ -27,8 +30,66 @@ target 'thaimassageapp' do
     react_native_post_install(
       installer,
       config[:reactNativePath],
-      :mac_catalyst_enabled => false,
-      # :ccache_enabled => true
+      :mac_catalyst_enabled => false
     )
+    
+    # Fix gRPC-Core zlib header issue by patching the source file
+    # This fixes the fdopen macro conflict with system headers in Xcode 15+
+    fix_script_path = File.join(File.dirname(__FILE__), 'fix_grpc_zlib.sh')
+    if File.exist?(fix_script_path)
+      system("bash -c 'cd #{File.dirname(__FILE__)} && ./fix_grpc_zlib.sh'")
+    else
+      Pod::UI.warn "⚠️  gRPC fix script not found at #{fix_script_path}"
+    end
+    
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        # Disable modular headers for React Native pods that conflict
+        # This prevents the "Redefinition of module 'react_runtime'" error
+        react_native_conflicting_pods = [
+          'React-RuntimeHermes',
+          'React-RuntimeCore',
+          'React-jsitooling'
+        ]
+        
+        if react_native_conflicting_pods.include?(target.name)
+          config.build_settings['DEFINES_MODULE'] = 'NO'
+          config.build_settings['CLANG_ENABLE_MODULES'] = 'NO'
+        end
+        
+        # CRITICAL: Disable modular headers for gRPC pods to fix module map errors
+        # gRPC doesn't work well with modular headers and causes "module map not found" errors
+        # This is still needed even with Firebase 12.7.0+ fixes
+        grpc_pods = ['gRPC-C++', 'gRPC-Core', 'BoringSSL-GRPC']
+        
+        if grpc_pods.include?(target.name)
+          config.build_settings['DEFINES_MODULE'] = 'NO'
+          config.build_settings['CLANG_ENABLE_MODULES'] = 'NO'
+          # Remove any module map references to prevent "module map not found" errors
+          if config.build_settings['MODULEMAP_FILE']
+            config.build_settings.delete('MODULEMAP_FILE')
+          end
+        end
+        
+        # Fix gRPC-Core zlib macro conflict with system headers
+        # This is a known issue with gRPC-Core and newer Xcode versions
+        # The zlib fdopen macro conflicts with system fdopen function declaration
+        if target.name == 'gRPC-Core'
+          config.build_settings['WARNING_CFLAGS'] ||= ['$(inherited)']
+          config.build_settings['WARNING_CFLAGS'] << '-Wno-macro-redefined'
+          config.build_settings['WARNING_CFLAGS'] << '-Wno-shorten-64-to-32'
+          config.build_settings['WARNING_CFLAGS'] << '-Wno-comma'
+          config.build_settings['WARNING_CFLAGS'] << '-Wno-unreachable-code'
+          config.build_settings['WARNING_CFLAGS'] << '-Wno-error'
+          # Undefine the problematic fdopen macro before system headers
+          config.build_settings['OTHER_CFLAGS'] ||= ['$(inherited)']
+          config.build_settings['OTHER_CFLAGS'] << '-Ufdopen'
+          config.build_settings['OTHER_CFLAGS'] << '-DHAVE_UNISTD_H'
+        end
+        
+        # Ensure all pods use the same Swift version
+        config.build_settings['SWIFT_VERSION'] = '5.0'
+      end
+    end
   end
 end
