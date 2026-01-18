@@ -19,8 +19,8 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 // IMPORTANT: Update this to your actual backend URL
 // For Android emulator: use "http://10.0.2.2:3000"
-// For physical device: use your computer's IP (e.g., "http://192.168.18.51:3000")
-const API_BASE_URL = process.env.API_BASE_URL || "http://192.168.18.51:3000";
+// For USB debugging: use localhost
+const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:3000";
 const USE_BACKEND_API = false; // Set to true once backend endpoint is ready
 
 const NotificationsScreen = ({ navigation }) => {

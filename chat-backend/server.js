@@ -1,11 +1,22 @@
 const express = require('express');
+const http = require('http');
 const nodemailer = require('nodemailer');
 const cors = require('cors');
 const admin = require('firebase-admin');
+const { Server } = require('socket.io');
 require('dotenv').config();
 
 const app = express();
+const server = http.createServer(app);
 const PORT = process.env.PORT || 3000;
+
+// Initialize Socket.IO with CORS configuration
+const io = new Server(server, {
+  cors: {
+    origin: '*', // In production, replace with your React Native app's origin
+    methods: ['GET', 'POST']
+  }
+});
 
 // Middleware
 app.use(cors());
@@ -22,14 +33,14 @@ try {
   });
   console.log('✅ Firebase Admin initialized');
 } catch (error) {
-  console.log('⚠️ Firebase Admin not initialized:', error. message);
+  console.log('⚠️ Firebase Admin not initialized:', error.message);
 }
 
 // Configure Email Transporter
 const transporter = nodemailer.createTransport({
   service: 'gmail', // You can use:  'gmail', 'outlook', 'yahoo', etc.
   auth: {
-    user: process.env. EMAIL_USER,     // Your email
+    user: process.env.EMAIL_USER,     // Your email
     pass: process.env.EMAIL_PASSWORD, // Your app password
   },
 });
@@ -41,6 +52,34 @@ transporter.verify((error, success) => {
   } else {
     console.log('✅ Email server is ready to send emails');
   }
+});
+
+// Recommendations endpoint
+app.get('/api/v1/recommendations/:userId', (req, res) => {
+  const limit = parseInt(req.query.limit) || 20;
+  const mockRecommendations = [
+    { id: 1, name: "Sample Salon 1", rating: 4.5 },
+    { id: 2, name: "Sample Salon 2", rating: 4.8 }
+  ].slice(0, limit);
+  
+  res.json({
+    success: true,
+    data: mockRecommendations
+  });
+});
+
+// Private massagers endpoint
+app.get('/api/private-massagers', (req, res) => {
+  const limit = parseInt(req.query.limit) || 20;
+  const mockMassagers = [
+    { id: 1, name: "Massager 1", experience: "5 years" },
+    { id: 2, name: "Massager 2", experience: "3 years" }
+  ].slice(0, limit);
+  
+  res.json({
+    success: true,
+    data: mockMassagers
+  });
 });
 
 // Health check endpoint
@@ -59,7 +98,7 @@ app.post('/send-otp', async (req, res) => {
 
     // Validation
     if (!email || !otp) {
-      return res. status(400).json({ 
+      return res.status(400).json({ 
         success: false, 
         error: 'Email and OTP are required' 
       });
@@ -67,7 +106,7 @@ app.post('/send-otp', async (req, res) => {
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex. test(email)) {
+    if (!emailRegex.test(email)) {
       return res.status(400).json({ 
         success: false, 
         error: 'Invalid email format' 
@@ -324,9 +363,9 @@ app.post('/verify-otp', async (req, res) => {
         });
       }
 
-      const otpData = otpDoc. data();
+      const otpData = otpDoc.data();
       const currentTime = new Date();
-      const expirationTime = otpData.expiresAt. toDate();
+      const expirationTime = otpData.expiresAt.toDate();
 
       // Check expiration
       if (currentTime > expirationTime) {
@@ -349,17 +388,17 @@ app.post('/verify-otp', async (req, res) => {
       if (otpData.otp === otp) {
         await db.collection('OTPVerification').doc(email).update({
           verified: true,
-          verifiedAt: admin.firestore. FieldValue.serverTimestamp(),
+          verifiedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
 
-        return res. status(200).json({ 
+        return res.status(200).json({ 
           success: true, 
           message: 'OTP verified successfully' 
         });
       } else {
         // Increment attempts
         await db.collection('OTPVerification').doc(email).update({
-          attempts: admin.firestore.FieldValue. increment(1),
+          attempts: admin.firestore.FieldValue.increment(1),
         });
 
         return res.status(400).json({ 
@@ -383,6 +422,145 @@ app.post('/verify-otp', async (req, res) => {
   }
 });
 
+// Mock database for chat functionality
+const users = new Map();
+const conversations = new Map();
+const messages = new Map();
+
+// Generate ID helper
+const generateId = () => Math.random().toString(36).substr(2, 9);
+
+// Chat/Messaging API Endpoints
+// ========================
+
+// User endpoints
+app.post('/api/users/register', (req, res) => {
+  const { name, email, firebaseUid } = req.body;
+  const user = { 
+    id: firebaseUid || generateId(), 
+    name, 
+    email,
+    createdAt: new Date().toISOString()
+  };
+  users.set(user.id, user);
+  res.json({ success: true, data: user });
+});
+
+app.get('/api/users/:userId', (req, res) => {
+  const user = users.get(req.params.userId);
+  if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+  res.json({ success: true, data: user });
+});
+
+app.get('/api/users', (req, res) => {
+  res.json({ 
+    success: true, 
+    data: Array.from(users.values())
+  });
+});
+
+// Conversation endpoints
+app.get('/api/conversations/:userId', (req, res) => {
+  const userConversations = Array.from(conversations.values())
+    .filter(conv => 
+      conv.participants.includes(req.params.userId)
+    )
+    .map(conv => ({
+      ...conv,
+      lastMessage: messages.get(conv.lastMessageId) || null
+    }));
+  
+  res.json({ success: true, data: userConversations });
+});
+
+app.post('/api/conversations', (req, res) => {
+  const { userId1, userId2 } = req.body;
+  const existingConversation = Array.from(conversations.values())
+    .find(conv => 
+      conv.participants.includes(userId1) && 
+      conv.participants.includes(userId2)
+    );
+
+  if (existingConversation) {
+    return res.json({ success: true, data: existingConversation });
+  }
+
+  const conversation = {
+    id: generateId(),
+    participants: [userId1, userId2],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  
+  conversations.set(conversation.id, conversation);
+  res.json({ success: true, data: conversation });
+});
+
+// Message endpoints
+app.get('/api/messages', (req, res) => {
+  const { conversationId, page = 1, limit = 50 } = req.query;
+  const conversationMessages = Array.from(messages.values())
+    .filter(msg => msg.conversationId === conversationId)
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice((page - 1) * limit, page * limit);
+
+  res.json({ success: true, data: conversationMessages });
+});
+
+app.post('/api/messages/mark-read', (req, res) => {
+  const { conversationId, userId } = req.body;
+  // In a real app, you would update the read status in the database
+  res.json({ success: true });
+});
+
+app.get('/api/messages/unread/:userId', (req, res) => {
+  // In a real app, you would count unread messages for the user
+  res.json({ success: true, count: 0 });
+});
+
+// Socket.IO connection handler
+io.on('connection', (socket) => {
+  console.log('🔌 New client connected:', socket.id);
+
+  // Handle booking events
+  socket.on('booking:create', (bookingData) => {
+    console.log('📅 New booking:', bookingData);
+    io.emit('booking:created', { 
+      ...bookingData,
+      status: 'pending',
+      timestamp: new Date().toISOString()
+    });
+  });
+
+  // Handle chat messages
+  socket.on('message:send', (message) => {
+    console.log('💬 New message:', message);
+    const newMessage = {
+      ...message,
+      id: generateId(),
+      createdAt: new Date().toISOString(),
+      read: false
+    };
+    
+    messages.set(newMessage.id, newMessage);
+    
+    // Update conversation's last message
+    const conversation = conversations.get(message.conversationId);
+    if (conversation) {
+      conversation.lastMessageId = newMessage.id;
+      conversation.updatedAt = new Date().toISOString();
+    }
+
+    // Broadcast to all clients in the conversation
+    io.emit(`conversation:${message.conversationId}`, newMessage);
+  });
+
+  // Handle disconnection
+  socket.on('disconnect', () => {
+    console.log('❌ Client disconnected:', socket.id);
+  });
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('❌ Server error:', err);
@@ -392,8 +570,8 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
+// Start the server
+server.listen(PORT, () => {
   console.log(`🚀 OTP Email Service running on port ${PORT}`);
   console.log(`📧 Email user: ${process.env.EMAIL_USER}`);
   console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);

@@ -62,9 +62,8 @@ const CARD_RAISE = verticalScale(40)
 // IMPORTANT: Update this to your actual backend URL
 // ⚠️ WARNING: localhost won't work on physical devices!
 // For Android emulator: use "http://10.0.2.2:3000" 
-// For physical device: use your computer's IP (e.g., "http://192.168.18.51:3000")
-// Current IP: 192.168.18.51 (update if changed)
-const API_BASE_URL = process.env.API_BASE_URL || "http://192.168.18.51:3000"
+// For USB debugging: use localhost
+const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:3000"
 
 const Homescreen = ({ navigation }) => {
   const { currentLanguage, t, formatText, translateDynamic } = useLanguage()

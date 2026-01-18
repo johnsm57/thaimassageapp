@@ -18,10 +18,9 @@
 // 🌐 FOR PRODUCTION:
 //   Use your deployed backend URL: 'https://your-backend.com'
 
-// Current configuration (update with your IP address)
-// For Android emulator: use 'http://10.0.2.2:5001'
-// For physical device: use your computer's IP (e.g., 'http://192.168.18.51:5001')
-const CHAT_BACKEND_URL = process.env.CHAT_BACKEND_URL || 'http://192.168.18.51:5001';
+// Using localhost with ADB reverse tunnel (adb reverse tcp:3000 tcp:3000)
+// For physical device: run 'adb reverse tcp:3000 tcp:3000' to enable tunneling
+const CHAT_BACKEND_URL = process.env.CHAT_BACKEND_URL || 'http://localhost:3000';
 
 export const CHAT_CONFIG = {
   SOCKET_URL: CHAT_BACKEND_URL,

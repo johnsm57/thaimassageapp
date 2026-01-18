@@ -5,8 +5,8 @@ import io from 'socket.io-client';
 // IMPORTANT: This should match your main backend URL (not chat backend)
 // IMPORTANT: This should match your main backend URL (not chat backend)
 // For Android emulator: use "http://10.0.2.2:3000"
-// For physical device: use your computer's IP (e.g., "http://192.168.18.51:3000")
-const BOOKING_SOCKET_URL = process.env.API_BASE_URL || "http://192.168.18.51:3000";
+// For USB debugging: use localhost
+const BOOKING_SOCKET_URL = process.env.API_BASE_URL || "http://localhost:3000";
 
 let bookingSocket = null;
 

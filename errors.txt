@@ -1,0 +1,520 @@
+--------- beginning of main
+01-18 01:55:23.902  1846  2065 W ReactNativeJS: 'Got a component with the name \'options\' for the screen \'options\'. React Components must start with an uppercase letter. If you\'re passing a regular function and not a component, pass it as children to \'Screen\' instead. Otherwise capitalize your component\'s name.', { [Stack] name: 'Stack' }
+01-18 01:55:23.954  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:23.969  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:23.970  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:23.972  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:23.974  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `doc`. Please use `doc()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:24.630  1846  2065 E ReactNativeJS: 'Error fetching user:', [Error: Failed to fetch user]
+01-18 01:55:24.646  1846  2065 I ReactNativeJS: '⚠️ User not found, registering...', 'Failed to fetch user'
+01-18 01:55:24.834  1846  2065 E ReactNativeJS: 'Error registering user:', [Error: Failed to register user]
+01-18 01:55:24.838  1846  2065 E ReactNativeJS: 'Error ensuring user registration:', [Error: Failed to register user]
+01-18 01:55:25.407  1846  2065 E ReactNativeJS: 'Error fetching conversations:', [Error: Failed to fetch conversations]
+01-18 01:55:25.411  1846  2065 E ReactNativeJS: 'Error loading conversations:', [Error: Failed to fetch conversations]
+01-18 01:55:25.412  1846  2065 E ReactNativeJS: 'Failed to load conversations:', [Error: Failed to fetch conversations]
+01-18 01:55:28.519  1846  2065 W ReactNativeJS: 'Got a component with the name \'options\' for the screen \'options\'. React Components must start with an uppercase letter. If you\'re passing a regular function and not a component, pass it as children to \'Screen\' instead. Otherwise capitalize your component\'s name.', { [Stack] name: 'Stack' }
+01-18 01:55:28.537  1846  2065 W ReactNativeJS: 'SafeAreaView has been deprecated and will be removed in a future release. Please use \'react-native-safe-area-context\' instead. See https://github.com/AppAndFlow/react-native-safe-area-context', { [Stack] name: 'Stack' }
+01-18 01:55:28.559  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:28.560  1846  2065 I ReactNativeJS: 'Fetching user data for:', 'CNEetgfdTlgCHEqxtOzQzoB44vN2'
+01-18 01:55:28.562  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:28.563  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:28.565  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `doc`. Please use `doc()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:29.113  1846  2065 I ReactNativeJS: 'User data loaded:', { tourCompletedAt: { _seconds: 1768681086, _nanoseconds: 433000000 },
+01-18 01:55:29.113  1846  2065 I ReactNativeJS:   location: 
+01-18 01:55:29.113  1846  2065 I ReactNativeJS:    { longitude: -5.7983899,
+01-18 01:55:29.113  1846  2065 I ReactNativeJS:      accuracy: 17.398000717163086,
+01-18 01:55:29.113  1846  2065 I ReactNativeJS:      fullAddress: 'Tangier, Pachalik de Tanger باشوية طنجة, Prefecture of Tangier - Assilah, Tangier-Tetouan-Al Hoceima, Morocco',
+01-18 01:55:29.113  1846  2065 I ReactNativeJS:      latitude: 35.7746884,
+01-18 01:55:29.113  1846  2065 I ReactNativeJS:      city: 'Tangier',
+01-18 01:55:29.113  1846  2065 I ReactNativeJS:      country: 'Morocco' },
+01-18 01:55:29.113  1846  2065 I ReactNativeJS:   name: 'Esam',
+01-18 01:55:29.113  1846  2065 I ReactNativeJS:   updatedAt: { _seconds: 1768680908, _nanoseconds: 11000000 },
+01-18 01:55:29.113  1846  2065 I ReactNativeJS:   locationCompleted: true,
+01-18 01:55:29.113  1846  2065 I ReactNativeJS:   profileCompleted: true,
+01-18 01:55:29.113  1846  2065 I ReactNativeJS:   gender: 'Male',
+01-18 01:55:29.113  1846  2065 I ReactNativeJS:   tourCompleted: true }
+01-18 01:55:30.604  1846  2065 W ReactNativeJS: 'Got a component with the name \'options\' for the screen \'options\'. React Components must start with an uppercase letter. If you\'re passing a regular function and not a component, pass it as children to \'Screen\' instead. Otherwise capitalize your component\'s name.', { [Stack] name: 'Stack' }
+01-18 01:55:30.638  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:30.639  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:30.641  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:30.644  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `doc`. Please use `doc()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:31.177  1846  2065 I ReactNativeJS: 🔄 Fetching recommendations...
+01-18 01:55:31.179  1846  2065 W ReactNativeJS: This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.
+01-18 01:55:31.180  1846  2065 I ReactNativeJS: '🌐 API_BASE_URL:', 'http://localhost:3000'
+01-18 01:55:31.180  1846  2065 I ReactNativeJS: '🌐 Fetching salon recommendations from:', 'http://localhost:3000/api/v1/recommendations/CNEetgfdTlgCHEqxtOzQzoB44vN2?limit=20&latitude=24.8607&longitude=67.0011'
+01-18 01:55:31.180  1846  2065 I ReactNativeJS: '🌐 Fetching private massagers from:', 'http://localhost:3000/api/private-massagers?limit=20'
+01-18 01:55:31.240  1846  2065 I ReactNativeJS: '📡 Salon response status:', 200
+01-18 01:55:31.240  1846  2065 I ReactNativeJS: '📡 Private massager response status:', 200
+01-18 01:55:31.241  1846  2065 I ReactNativeJS: ⏱️ Fetch took 64ms
+01-18 01:55:31.246  1846  2065 I ReactNativeJS: '📥 Received salon recommendations:', { success: true,
+01-18 01:55:31.246  1846  2065 I ReactNativeJS:   data: 
+01-18 01:55:31.246  1846  2065 I ReactNativeJS:    [ { id: 1, name: 'Sample Salon 1', rating: 4.5 },
+01-18 01:55:31.246  1846  2065 I ReactNativeJS:      { id: 2, name: 'Sample Salon 2', rating: 4.8 } ] }
+01-18 01:55:31.250  1846  2065 I ReactNativeJS: '📥 Received private massagers:', { success: true,
+01-18 01:55:31.250  1846  2065 I ReactNativeJS:   data: 
+01-18 01:55:31.250  1846  2065 I ReactNativeJS:    [ { id: 1, name: 'Massager 1', experience: '5 years' },
+01-18 01:55:31.250  1846  2065 I ReactNativeJS:      { id: 2, name: 'Massager 2', experience: '3 years' } ] }
+01-18 01:55:31.251  1846  2065 I ReactNativeJS: ✅ Found 2 private massagers
+01-18 01:55:31.252  1846  2065 I ReactNativeJS: '📥 Combined data:', { success: true,
+01-18 01:55:31.252  1846  2065 I ReactNativeJS:   salonRecommendations: 
+01-18 01:55:31.252  1846  2065 I ReactNativeJS:    [ { id: 1, name: 'Sample Salon 1', rating: 4.5 },
+01-18 01:55:31.252  1846  2065 I ReactNativeJS:      { id: 2, name: 'Sample Salon 2', rating: 4.8 } ],
+01-18 01:55:31.252  1846  2065 I ReactNativeJS:   privateMassagers: 
+01-18 01:55:31.252  1846  2065 I ReactNativeJS:    [ { id: 1, name: 'Massager 1', experience: '5 years' },
+01-18 01:55:31.252  1846  2065 I ReactNativeJS:      { id: 2, name: 'Massager 2', experience: '3 years' } ] }
+01-18 01:55:31.253  1846  2065 I ReactNativeJS: ✅ Loaded 2 salons and 2 private massagers
+01-18 01:55:31.253  1846  2065 I ReactNativeJS: ✅ Total providers: 4 (0 subscribed, 4 regular)
+01-18 01:55:31.254  1846  2065 I ReactNativeJS: ⏱️ Total loading time: 77ms
+01-18 01:55:31.330  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:31.332  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:31.334  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:31.335  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `doc`. Please use `doc()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:31.920  1846  2065 W ReactNativeJS: 'Got a component with the name \'options\' for the screen \'options\'. React Components must start with an uppercase letter. If you\'re passing a regular function and not a component, pass it as children to \'Screen\' instead. Otherwise capitalize your component\'s name.', { [Stack] name: 'Stack' }
+01-18 01:55:31.984  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:31.986  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:31.988  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:31.990  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `where`. Please use `where()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:32.552  1846  2065 E ReactNativeJS: 'Error fetching from Firestore:', [Error: [firestore/failed-precondition] The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/luci-app-443ca/firestore/indexes?create_composite=Ck9wcm9qZWN0cy9sdWNpLWFwcC00NDNjYS9kYXRhYmFzZXMvKGRlZmF1bHQpL2NvbGxlY3Rpb25Hcm91cHMvYm9va2luZ3MvaW5kZXhlcy9fEAEaDwoLZmlyZWJhc2VVSUQQARoNCgljcmVhdGVkQXQQAhoMCghfX25hbWVfXxAC]
+01-18 01:55:33.699  1846  2065 W ReactNativeJS: 'Got a component with the name \'options\' for the screen \'options\'. React Components must start with an uppercase letter. If you\'re passing a regular function and not a component, pass it as children to \'Screen\' instead. Otherwise capitalize your component\'s name.', { [Stack] name: 'Stack' }
+01-18 01:55:35.854  1846  2065 W ReactNativeJS: 'Got a component with the name \'options\' for the screen \'options\'. React Components must start with an uppercase letter. If you\'re passing a regular function and not a component, pass it as children to \'Screen\' instead. Otherwise capitalize your component\'s name.', { [Stack] name: 'Stack' }
+01-18 01:55:35.899  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:35.901  1846  2065 I ReactNativeJS: 'Fetching user data for:', 'CNEetgfdTlgCHEqxtOzQzoB44vN2'
+01-18 01:55:35.903  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:35.906  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:35.909  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `doc`. Please use `doc()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:35.914  1846  2065 W ReactNativeJS: 'Got a component with the name \'options\' for the screen \'options\'. React Components must start with an uppercase letter. If you\'re passing a regular function and not a component, pass it as children to \'Screen\' instead. Otherwise capitalize your component\'s name.', { [Stack] name: 'Stack' }
+01-18 01:55:36.401  1846  2065 I ReactNativeJS: 'User data loaded:', { tourCompletedAt: { _seconds: 1768681086, _nanoseconds: 433000000 },
+01-18 01:55:36.401  1846  2065 I ReactNativeJS:   location: 
+01-18 01:55:36.401  1846  2065 I ReactNativeJS:    { longitude: -5.7983899,
+01-18 01:55:36.401  1846  2065 I ReactNativeJS:      accuracy: 17.398000717163086,
+01-18 01:55:36.401  1846  2065 I ReactNativeJS:      fullAddress: 'Tangier, Pachalik de Tanger باشوية طنجة, Prefecture of Tangier - Assilah, Tangier-Tetouan-Al Hoceima, Morocco',
+01-18 01:55:36.401  1846  2065 I ReactNativeJS:      latitude: 35.7746884,
+01-18 01:55:36.401  1846  2065 I ReactNativeJS:      city: 'Tangier',
+01-18 01:55:36.401  1846  2065 I ReactNativeJS:      country: 'Morocco' },
+01-18 01:55:36.401  1846  2065 I ReactNativeJS:   name: 'Esam',
+01-18 01:55:36.401  1846  2065 I ReactNativeJS:   updatedAt: { _seconds: 1768680908, _nanoseconds: 11000000 },
+01-18 01:55:36.401  1846  2065 I ReactNativeJS:   locationCompleted: true,
+01-18 01:55:36.401  1846  2065 I ReactNativeJS:   profileCompleted: true,
+01-18 01:55:36.401  1846  2065 I ReactNativeJS:   gender: 'Male',
+01-18 01:55:36.401  1846  2065 I ReactNativeJS:   tourCompleted: true }
+01-18 01:55:39.319  1846  2065 I ReactNativeJS: 🚪 Starting logout process...
+01-18 01:55:39.327  1846  2065 I ReactNativeJS: ✅ AsyncStorage cleared
+01-18 01:55:39.328  1846  2065 W ReactNativeJS: This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.
+01-18 01:55:39.329  1846  2065 W ReactNativeJS: This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `signOut`. Please use `signOut()` instead.
+01-18 01:55:39.335  1846  2065 I ReactNativeJS: ✅ Firebase sign out successful
+01-18 01:55:39.337  1846  2065 I ReactNativeJS: ✅ User logged out successfully
+01-18 01:55:39.341  1846  2065 W ReactNativeJS: 'Got a component with the name \'options\' for the screen \'options\'. React Components must start with an uppercase letter. If you\'re passing a regular function and not a component, pass it as children to \'Screen\' instead. Otherwise capitalize your component\'s name.', { [Stack] name: 'Stack' }
+01-18 01:55:42.416  1846  2065 W ReactNativeJS: 'Got a component with the name \'options\' for the screen \'options\'. React Components must start with an uppercase letter. If you\'re passing a regular function and not a component, pass it as children to \'Screen\' instead. Otherwise capitalize your component\'s name.', { [Stack] name: 'Stack' }
+01-18 01:55:42.550  1846  2065 W ReactNativeJS: 'Got a component with the name \'options\' for the screen \'options\'. React Components must start with an uppercase letter. If you\'re passing a regular function and not a component, pass it as children to \'Screen\' instead. Otherwise capitalize your component\'s name.', { [Stack] name: 'Stack' }
+01-18 01:55:44.667  1846  2065 W ReactNativeJS: 'Got a component with the name \'options\' for the screen \'options\'. React Components must start with an uppercase letter. If you\'re passing a regular function and not a component, pass it as children to \'Screen\' instead. Otherwise capitalize your component\'s name.', { [Stack] name: 'Stack' }
+01-18 01:55:44.791  1846  2065 I ReactNativeJS: Google Sign-In configured successfully
+01-18 01:55:54.080  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:54.082  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `signInWithEmailAndPassword`. Please use `signInWithEmailAndPassword()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:54.835  1846  2065 I ReactNativeJS: 'User logged in successfully:', 'CNEetgfdTlgCHEqxtOzQzoB44vN2'
+01-18 01:55:54.840  1846  2065 W ReactNativeJS: This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.
+01-18 01:55:54.842  1846  2065 W ReactNativeJS: This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.
+01-18 01:55:54.843  1846  2065 W ReactNativeJS: This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `doc`. Please use `doc()` instead.
+01-18 01:55:55.442  1846  2065 I ReactNativeJS: 'User profile data:', { tourCompletedAt: { _seconds: 1768681086, _nanoseconds: 433000000 },
+01-18 01:55:55.442  1846  2065 I ReactNativeJS:   location: 
+01-18 01:55:55.442  1846  2065 I ReactNativeJS:    { longitude: -5.7983899,
+01-18 01:55:55.442  1846  2065 I ReactNativeJS:      accuracy: 17.398000717163086,
+01-18 01:55:55.442  1846  2065 I ReactNativeJS:      fullAddress: 'Tangier, Pachalik de Tanger باشوية طنجة, Prefecture of Tangier - Assilah, Tangier-Tetouan-Al Hoceima, Morocco',
+01-18 01:55:55.442  1846  2065 I ReactNativeJS:      latitude: 35.7746884,
+01-18 01:55:55.442  1846  2065 I ReactNativeJS:      city: 'Tangier',
+01-18 01:55:55.442  1846  2065 I ReactNativeJS:      country: 'Morocco' },
+01-18 01:55:55.442  1846  2065 I ReactNativeJS:   name: 'Esam',
+01-18 01:55:55.442  1846  2065 I ReactNativeJS:   updatedAt: { _seconds: 1768680908, _nanoseconds: 11000000 },
+01-18 01:55:55.442  1846  2065 I ReactNativeJS:   locationCompleted: true,
+01-18 01:55:55.442  1846  2065 I ReactNativeJS:   profileCompleted: true,
+01-18 01:55:55.442  1846  2065 I ReactNativeJS:   gender: 'Male',
+01-18 01:55:55.442  1846  2065 I ReactNativeJS:   tourCompleted: true }
+01-18 01:55:55.451  1846  2065 W ReactNativeJS: 'Got a component with the name \'options\' for the screen \'options\'. React Components must start with an uppercase letter. If you\'re passing a regular function and not a component, pass it as children to \'Screen\' instead. Otherwise capitalize your component\'s name.', { [Stack] name: 'Stack' }
+01-18 01:55:55.519  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:55.521  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:55.522  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:55.524  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `doc`. Please use `doc()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:56.000  1846  2065 I ReactNativeJS: 🔄 Fetching recommendations...
+01-18 01:55:56.001  1846  2065 W ReactNativeJS: This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.
+01-18 01:55:56.005  1846  2065 I ReactNativeJS: '🌐 API_BASE_URL:', 'http://localhost:3000'
+01-18 01:55:56.006  1846  2065 I ReactNativeJS: '🌐 Fetching salon recommendations from:', 'http://localhost:3000/api/v1/recommendations/CNEetgfdTlgCHEqxtOzQzoB44vN2?limit=20&latitude=24.8607&longitude=67.0011'
+01-18 01:55:56.007  1846  2065 I ReactNativeJS: '🌐 Fetching private massagers from:', 'http://localhost:3000/api/private-massagers?limit=20'
+01-18 01:55:56.090  1846  2065 I ReactNativeJS: '📡 Salon response status:', 200
+01-18 01:55:56.091  1846  2065 I ReactNativeJS: '📡 Private massager response status:', 200
+01-18 01:55:56.091  1846  2065 I ReactNativeJS: ⏱️ Fetch took 92ms
+01-18 01:55:56.098  1846  2065 I ReactNativeJS: '📥 Received salon recommendations:', { success: true,
+01-18 01:55:56.098  1846  2065 I ReactNativeJS:   data: 
+01-18 01:55:56.098  1846  2065 I ReactNativeJS:    [ { id: 1, name: 'Sample Salon 1', rating: 4.5 },
+01-18 01:55:56.098  1846  2065 I ReactNativeJS:      { id: 2, name: 'Sample Salon 2', rating: 4.8 } ] }
+01-18 01:55:56.102  1846  2065 I ReactNativeJS: '📥 Received private massagers:', { success: true,
+01-18 01:55:56.102  1846  2065 I ReactNativeJS:   data: 
+01-18 01:55:56.102  1846  2065 I ReactNativeJS:    [ { id: 1, name: 'Massager 1', experience: '5 years' },
+01-18 01:55:56.102  1846  2065 I ReactNativeJS:      { id: 2, name: 'Massager 2', experience: '3 years' } ] }
+01-18 01:55:56.103  1846  2065 I ReactNativeJS: ✅ Found 2 private massagers
+01-18 01:55:56.104  1846  2065 I ReactNativeJS: '📥 Combined data:', { success: true,
+01-18 01:55:56.104  1846  2065 I ReactNativeJS:   salonRecommendations: 
+01-18 01:55:56.104  1846  2065 I ReactNativeJS:    [ { id: 1, name: 'Sample Salon 1', rating: 4.5 },
+01-18 01:55:56.104  1846  2065 I ReactNativeJS:      { id: 2, name: 'Sample Salon 2', rating: 4.8 } ],
+01-18 01:55:56.104  1846  2065 I ReactNativeJS:   privateMassagers: 
+01-18 01:55:56.104  1846  2065 I ReactNativeJS:    [ { id: 1, name: 'Massager 1', experience: '5 years' },
+01-18 01:55:56.104  1846  2065 I ReactNativeJS:      { id: 2, name: 'Massager 2', experience: '3 years' } ] }
+01-18 01:55:56.105  1846  2065 I ReactNativeJS: ✅ Loaded 2 salons and 2 private massagers
+01-18 01:55:56.106  1846  2065 I ReactNativeJS: ✅ Total providers: 4 (0 subscribed, 4 regular)
+01-18 01:55:56.106  1846  2065 I ReactNativeJS: ⏱️ Total loading time: 107ms
+01-18 01:55:56.174  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:56.176  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:56.177  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.', { [Stack] name: 'Stack' }
+01-18 01:55:56.179  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `doc`. Please use `doc()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:09.064  1846  2065 W ReactNativeJS: 'Got a component with the name \'options\' for the screen \'options\'. React Components must start with an uppercase letter. If you\'re passing a regular function and not a component, pass it as children to \'Screen\' instead. Otherwise capitalize your component\'s name.', { [Stack] name: 'Stack' }
+01-18 01:56:09.116  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:09.132  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:09.134  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:09.136  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:09.138  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `doc`. Please use `doc()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:09.777  1846  2065 E ReactNativeJS: 'Error fetching user:', [Error: Failed to fetch user]
+01-18 01:56:09.783  1846  2065 I ReactNativeJS: '⚠️ User not found, registering...', 'Failed to fetch user'
+01-18 01:56:09.848  1846  2065 E ReactNativeJS: 'Error registering user:', [Error: Failed to register user]
+01-18 01:56:09.849  1846  2065 E ReactNativeJS: 'Error ensuring user registration:', [Error: Failed to register user]
+01-18 01:56:10.419  1846  2065 E ReactNativeJS: 'Error fetching conversations:', [Error: Failed to fetch conversations]
+01-18 01:56:10.423  1846  2065 E ReactNativeJS: 'Error loading conversations:', [Error: Failed to fetch conversations]
+01-18 01:56:10.426  1846  2065 E ReactNativeJS: 'Failed to load conversations:', [Error: Failed to fetch conversations]
+01-18 01:56:11.603  1846  2065 W ReactNativeJS: 'Got a component with the name \'options\' for the screen \'options\'. React Components must start with an uppercase letter. If you\'re passing a regular function and not a component, pass it as children to \'Screen\' instead. Otherwise capitalize your component\'s name.', { [Stack] name: 'Stack' }
+01-18 01:56:11.644  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:11.645  1846  2065 I ReactNativeJS: 'Fetching user data for:', 'CNEetgfdTlgCHEqxtOzQzoB44vN2'
+01-18 01:56:11.647  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:11.649  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:11.651  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `doc`. Please use `doc()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:12.242  1846  2065 I ReactNativeJS: 'User data loaded:', { tourCompletedAt: { _seconds: 1768681086, _nanoseconds: 433000000 },
+01-18 01:56:12.242  1846  2065 I ReactNativeJS:   location: 
+01-18 01:56:12.242  1846  2065 I ReactNativeJS:    { longitude: -5.7983899,
+01-18 01:56:12.242  1846  2065 I ReactNativeJS:      accuracy: 17.398000717163086,
+01-18 01:56:12.242  1846  2065 I ReactNativeJS:      fullAddress: 'Tangier, Pachalik de Tanger باشوية طنجة, Prefecture of Tangier - Assilah, Tangier-Tetouan-Al Hoceima, Morocco',
+01-18 01:56:12.242  1846  2065 I ReactNativeJS:      latitude: 35.7746884,
+01-18 01:56:12.242  1846  2065 I ReactNativeJS:      city: 'Tangier',
+01-18 01:56:12.242  1846  2065 I ReactNativeJS:      country: 'Morocco' },
+01-18 01:56:12.242  1846  2065 I ReactNativeJS:   name: 'Esam',
+01-18 01:56:12.242  1846  2065 I ReactNativeJS:   updatedAt: { _seconds: 1768680908, _nanoseconds: 11000000 },
+01-18 01:56:12.242  1846  2065 I ReactNativeJS:   locationCompleted: true,
+01-18 01:56:12.242  1846  2065 I ReactNativeJS:   profileCompleted: true,
+01-18 01:56:12.242  1846  2065 I ReactNativeJS:   gender: 'Male',
+01-18 01:56:12.242  1846  2065 I ReactNativeJS:   tourCompleted: true }
+01-18 01:56:14.962  1846  2065 W ReactNativeJS: 'Got a component with the name \'options\' for the screen \'options\'. React Components must start with an uppercase letter. If you\'re passing a regular function and not a component, pass it as children to \'Screen\' instead. Otherwise capitalize your component\'s name.', { [Stack] name: 'Stack' }
+01-18 01:56:15.012  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:15.015  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:15.017  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:15.019  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `doc`. Please use `doc()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:15.517  1846  2065 I ReactNativeJS: 🔄 Fetching recommendations...
+01-18 01:56:15.520  1846  2065 W ReactNativeJS: This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.
+01-18 01:56:15.522  1846  2065 I ReactNativeJS: '🌐 API_BASE_URL:', 'http://localhost:3000'
+01-18 01:56:15.523  1846  2065 I ReactNativeJS: '🌐 Fetching salon recommendations from:', 'http://localhost:3000/api/v1/recommendations/CNEetgfdTlgCHEqxtOzQzoB44vN2?limit=20&latitude=24.8607&longitude=67.0011'
+01-18 01:56:15.524  1846  2065 I ReactNativeJS: '🌐 Fetching private massagers from:', 'http://localhost:3000/api/private-massagers?limit=20'
+01-18 01:56:15.574  1846  2065 I ReactNativeJS: '📡 Salon response status:', 200
+01-18 01:56:15.575  1846  2065 I ReactNativeJS: '📡 Private massager response status:', 200
+01-18 01:56:15.575  1846  2065 I ReactNativeJS: ⏱️ Fetch took 59ms
+01-18 01:56:15.582  1846  2065 I ReactNativeJS: '📥 Received salon recommendations:', { success: true,
+01-18 01:56:15.582  1846  2065 I ReactNativeJS:   data: 
+01-18 01:56:15.582  1846  2065 I ReactNativeJS:    [ { id: 1, name: 'Sample Salon 1', rating: 4.5 },
+01-18 01:56:15.582  1846  2065 I ReactNativeJS:      { id: 2, name: 'Sample Salon 2', rating: 4.8 } ] }
+01-18 01:56:15.586  1846  2065 I ReactNativeJS: '📥 Received private massagers:', { success: true,
+01-18 01:56:15.586  1846  2065 I ReactNativeJS:   data: 
+01-18 01:56:15.586  1846  2065 I ReactNativeJS:    [ { id: 1, name: 'Massager 1', experience: '5 years' },
+01-18 01:56:15.586  1846  2065 I ReactNativeJS:      { id: 2, name: 'Massager 2', experience: '3 years' } ] }
+01-18 01:56:15.587  1846  2065 I ReactNativeJS: ✅ Found 2 private massagers
+01-18 01:56:15.588  1846  2065 I ReactNativeJS: '📥 Combined data:', { success: true,
+01-18 01:56:15.588  1846  2065 I ReactNativeJS:   salonRecommendations: 
+01-18 01:56:15.588  1846  2065 I ReactNativeJS:    [ { id: 1, name: 'Sample Salon 1', rating: 4.5 },
+01-18 01:56:15.588  1846  2065 I ReactNativeJS:      { id: 2, name: 'Sample Salon 2', rating: 4.8 } ],
+01-18 01:56:15.588  1846  2065 I ReactNativeJS:   privateMassagers: 
+01-18 01:56:15.588  1846  2065 I ReactNativeJS:    [ { id: 1, name: 'Massager 1', experience: '5 years' },
+01-18 01:56:15.588  1846  2065 I ReactNativeJS:      { id: 2, name: 'Massager 2', experience: '3 years' } ] }
+01-18 01:56:15.589  1846  2065 I ReactNativeJS: ✅ Loaded 2 salons and 2 private massagers
+01-18 01:56:15.590  1846  2065 I ReactNativeJS: ✅ Total providers: 4 (0 subscribed, 4 regular)
+01-18 01:56:15.590  1846  2065 I ReactNativeJS: ⏱️ Total loading time: 74ms
+01-18 01:56:15.663  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:15.665  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:15.667  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:15.668  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `doc`. Please use `doc()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:16.186  1846  2065 W ReactNativeJS: 'Got a component with the name \'options\' for the screen \'options\'. React Components must start with an uppercase letter. If you\'re passing a regular function and not a component, pass it as children to \'Screen\' instead. Otherwise capitalize your component\'s name.', { [Stack] name: 'Stack' }
+01-18 01:56:16.242  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:16.244  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:16.246  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:16.248  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `where`. Please use `where()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:16.799  1846  2065 E ReactNativeJS: 'Error fetching from Firestore:', [Error: [firestore/failed-precondition] The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/luci-app-443ca/firestore/indexes?create_composite=Ck9wcm9qZWN0cy9sdWNpLWFwcC00NDNjYS9kYXRhYmFzZXMvKGRlZmF1bHQpL2NvbGxlY3Rpb25Hcm91cHMvYm9va2luZ3MvaW5kZXhlcy9fEAEaDwoLZmlyZWJhc2VVSUQQARoNCgljcmVhdGVkQXQQAhoMCghfX25hbWVfXxAC]
+01-18 01:56:33.232  1846  2065 W ReactNativeJS: 'Got a component with the name \'options\' for the screen \'options\'. React Components must start with an uppercase letter. If you\'re passing a regular function and not a component, pass it as children to \'Screen\' instead. Otherwise capitalize your component\'s name.', { [Stack] name: 'Stack' }
+01-18 01:56:34.395  1846  2065 W ReactNativeJS: 'Got a component with the name \'options\' for the screen \'options\'. React Components must start with an uppercase letter. If you\'re passing a regular function and not a component, pass it as children to \'Screen\' instead. Otherwise capitalize your component\'s name.', { [Stack] name: 'Stack' }
+01-18 01:56:34.467  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:34.471  1846  2065 W ReactNativeJS: 'Got a component with the name \'options\' for the screen \'options\'. React Components must start with an uppercase letter. If you\'re passing a regular function and not a component, pass it as children to \'Screen\' instead. Otherwise capitalize your component\'s name.', { [Stack] name: 'Stack' }
+01-18 01:56:34.487  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:34.488  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:34.490  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:34.492  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `doc`. Please use `doc()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:35.153  1846  2065 E ReactNativeJS: 'Error fetching user:', [Error: Failed to fetch user]
+01-18 01:56:35.159  1846  2065 I ReactNativeJS: '⚠️ User not found, registering...', 'Failed to fetch user'
+01-18 01:56:35.220  1846  2065 E ReactNativeJS: 'Error registering user:', [Error: Failed to register user]
+01-18 01:56:35.221  1846  2065 E ReactNativeJS: 'Error ensuring user registration:', [Error: Failed to register user]
+01-18 01:56:35.794  1846  2065 E ReactNativeJS: 'Error fetching conversations:', [Error: Failed to fetch conversations]
+01-18 01:56:35.798  1846  2065 E ReactNativeJS: 'Error loading conversations:', [Error: Failed to fetch conversations]
+01-18 01:56:35.801  1846  2065 E ReactNativeJS: 'Failed to load conversations:', [Error: Failed to fetch conversations]
+01-18 01:56:36.992  1846  2065 W ReactNativeJS: 'Got a component with the name \'options\' for the screen \'options\'. React Components must start with an uppercase letter. If you\'re passing a regular function and not a component, pass it as children to \'Screen\' instead. Otherwise capitalize your component\'s name.', { [Stack] name: 'Stack' }
+01-18 01:56:37.044  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:37.046  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:37.048  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:37.049  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `doc`. Please use `doc()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:37.640  1846  2065 I ReactNativeJS: 🔄 Fetching recommendations...
+01-18 01:56:37.642  1846  2065 W ReactNativeJS: This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.
+01-18 01:56:37.643  1846  2065 I ReactNativeJS: '🌐 API_BASE_URL:', 'http://localhost:3000'
+01-18 01:56:37.644  1846  2065 I ReactNativeJS: '🌐 Fetching salon recommendations from:', 'http://localhost:3000/api/v1/recommendations/CNEetgfdTlgCHEqxtOzQzoB44vN2?limit=20&latitude=24.8607&longitude=67.0011'
+01-18 01:56:37.644  1846  2065 I ReactNativeJS: '🌐 Fetching private massagers from:', 'http://localhost:3000/api/private-massagers?limit=20'
+01-18 01:56:37.702  1846  2065 I ReactNativeJS: '📡 Salon response status:', 200
+01-18 01:56:37.703  1846  2065 I ReactNativeJS: '📡 Private massager response status:', 200
+01-18 01:56:37.703  1846  2065 I ReactNativeJS: ⏱️ Fetch took 64ms
+01-18 01:56:37.712  1846  2065 I ReactNativeJS: '📥 Received salon recommendations:', { success: true,
+01-18 01:56:37.712  1846  2065 I ReactNativeJS:   data: 
+01-18 01:56:37.712  1846  2065 I ReactNativeJS:    [ { id: 1, name: 'Sample Salon 1', rating: 4.5 },
+01-18 01:56:37.712  1846  2065 I ReactNativeJS:      { id: 2, name: 'Sample Salon 2', rating: 4.8 } ] }
+01-18 01:56:37.717  1846  2065 I ReactNativeJS: '📥 Received private massagers:', { success: true,
+01-18 01:56:37.717  1846  2065 I ReactNativeJS:   data: 
+01-18 01:56:37.717  1846  2065 I ReactNativeJS:    [ { id: 1, name: 'Massager 1', experience: '5 years' },
+01-18 01:56:37.717  1846  2065 I ReactNativeJS:      { id: 2, name: 'Massager 2', experience: '3 years' } ] }
+01-18 01:56:37.718  1846  2065 I ReactNativeJS: ✅ Found 2 private massagers
+01-18 01:56:37.719  1846  2065 I ReactNativeJS: '📥 Combined data:', { success: true,
+01-18 01:56:37.719  1846  2065 I ReactNativeJS:   salonRecommendations: 
+01-18 01:56:37.719  1846  2065 I ReactNativeJS:    [ { id: 1, name: 'Sample Salon 1', rating: 4.5 },
+01-18 01:56:37.719  1846  2065 I ReactNativeJS:      { id: 2, name: 'Sample Salon 2', rating: 4.8 } ],
+01-18 01:56:37.719  1846  2065 I ReactNativeJS:   privateMassagers: 
+01-18 01:56:37.719  1846  2065 I ReactNativeJS:    [ { id: 1, name: 'Massager 1', experience: '5 years' },
+01-18 01:56:37.719  1846  2065 I ReactNativeJS:      { id: 2, name: 'Massager 2', experience: '3 years' } ] }
+01-18 01:56:37.720  1846  2065 I ReactNativeJS: ✅ Loaded 2 salons and 2 private massagers
+01-18 01:56:37.720  1846  2065 I ReactNativeJS: ✅ Total providers: 4 (0 subscribed, 4 regular)
+01-18 01:56:37.721  1846  2065 I ReactNativeJS: ⏱️ Total loading time: 81ms
+01-18 01:56:37.796  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:37.797  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:37.799  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:37.801  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `doc`. Please use `doc()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:38.344  1846  2065 W ReactNativeJS: 'Got a component with the name \'options\' for the screen \'options\'. React Components must start with an uppercase letter. If you\'re passing a regular function and not a component, pass it as children to \'Screen\' instead. Otherwise capitalize your component\'s name.', { [Stack] name: 'Stack' }
+01-18 01:56:38.411  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:38.412  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:38.414  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:38.415  1846  2065 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `where`. Please use `where()` instead.', { [Stack] name: 'Stack' }
+01-18 01:56:38.876  1846  2065 E ReactNativeJS: 'Error fetching from Firestore:', [Error: [firestore/failed-precondition] The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/luci-app-443ca/firestore/indexes?create_composite=Ck9wcm9qZWN0cy9sdWNpLWFwcC00NDNjYS9kYXRhYmFzZXMvKGRlZmF1bHQpL2NvbGxlY3Rpb25Hcm91cHMvYm9va2luZ3MvaW5kZXhlcy9fEAEaDwoLZmlyZWJhc2VVSUQQARoNCgljcmVhdGVkQXQQAhoMCghfX25hbWVfXxAC]
+01-18 02:01:06.969  1846  2065 I ReactNativeJS: '❌ Booking socket disconnected. Reason:', 'ping timeout'
+01-18 02:01:08.520  1846  2065 I ReactNativeJS: '✅ Booking socket connected successfully, emitting user_connected:', 'CNEetgfdTlgCHEqxtOzQzoB44vN2'
+01-18 02:01:12.947  1846  3147 I ReactNativeJS: Running "thaimassageapp" with {"rootTag":1,"initialProps":{},"fabric":true}
+01-18 02:01:13.332  1846  3147 I ReactNativeJS: 🔍 Checking authentication status...
+01-18 02:01:13.346  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:13.362  1846  3147 I ReactNativeJS: '✅ User is logged in:', 'CNEetgfdTlgCHEqxtOzQzoB44vN2'
+01-18 02:01:13.363  1846  3147 I ReactNativeJS: '📧 Email:', 'esam@gmail.com'
+01-18 02:01:13.363  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:13.367  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:13.369  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `doc`. Please use `doc()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:13.376  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:13.376  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:13.377  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:13.378  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `doc`. Please use `doc()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:14.039  1846  3147 I ReactNativeJS: '📄 User data found:', { tourCompletedAt: { _seconds: 1768681086, _nanoseconds: 433000000 },
+01-18 02:01:14.039  1846  3147 I ReactNativeJS:   location: 
+01-18 02:01:14.039  1846  3147 I ReactNativeJS:    { longitude: -5.7983899,
+01-18 02:01:14.039  1846  3147 I ReactNativeJS:      accuracy: 17.398000717163086,
+01-18 02:01:14.039  1846  3147 I ReactNativeJS:      fullAddress: 'Tangier, Pachalik de Tanger باشوية طنجة, Prefecture of Tangier - Assilah, Tangier-Tetouan-Al Hoceima, Morocco',
+01-18 02:01:14.039  1846  3147 I ReactNativeJS:      latitude: 35.7746884,
+01-18 02:01:14.039  1846  3147 I ReactNativeJS:      city: 'Tangier',
+01-18 02:01:14.039  1846  3147 I ReactNativeJS:      country: 'Morocco' },
+01-18 02:01:14.039  1846  3147 I ReactNativeJS:   name: 'Esam',
+01-18 02:01:14.039  1846  3147 I ReactNativeJS:   updatedAt: { _seconds: 1768680908, _nanoseconds: 11000000 },
+01-18 02:01:14.039  1846  3147 I ReactNativeJS:   locationCompleted: true,
+01-18 02:01:14.039  1846  3147 I ReactNativeJS:   profileCompleted: true,
+01-18 02:01:14.039  1846  3147 I ReactNativeJS:   gender: 'Male',
+01-18 02:01:14.039  1846  3147 I ReactNativeJS:   tourCompleted: true }
+01-18 02:01:14.040  1846  3147 I ReactNativeJS: 'Profile check:', { hasName: true, hasGender: true, hasLocation: true }
+01-18 02:01:14.040  1846  3147 I ReactNativeJS: ✅ Profile complete, navigating to Home
+01-18 02:01:14.121  1846  3147 W ReactNativeJS: 'Got a component with the name \'options\' for the screen \'options\'. React Components must start with an uppercase letter. If you\'re passing a regular function and not a component, pass it as children to \'Screen\' instead. Otherwise capitalize your component\'s name.', { [Stack] name: 'Stack' }
+01-18 02:01:14.353  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:14.355  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:14.356  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:14.357  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `doc`. Please use `doc()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:14.408  1846  3147 I ReactNativeJS: '🔌 Attempting to connect booking socket to:', 'http://localhost:3000'
+01-18 02:01:14.449  1846  3147 I ReactNativeJS: '🔌 Attempting to connect booking socket to:', 'http://localhost:3000'
+01-18 02:01:14.472  1846  3147 I ReactNativeJS: '✅ Booking socket connected successfully, emitting user_connected:', 'CNEetgfdTlgCHEqxtOzQzoB44vN2'
+01-18 02:01:14.479  1846  3147 I ReactNativeJS: '✅ Booking socket connected successfully, emitting user_connected:', 'CNEetgfdTlgCHEqxtOzQzoB44vN2'
+01-18 02:01:14.891  1846  3147 I ReactNativeJS: 🔄 Fetching recommendations...
+01-18 02:01:14.892  1846  3147 W ReactNativeJS: This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.
+01-18 02:01:14.893  1846  3147 I ReactNativeJS: '🌐 API_BASE_URL:', 'http://localhost:3000'
+01-18 02:01:14.893  1846  3147 I ReactNativeJS: '🌐 Fetching salon recommendations from:', 'http://localhost:3000/api/v1/recommendations/CNEetgfdTlgCHEqxtOzQzoB44vN2?limit=20&latitude=24.8607&longitude=67.0011'
+01-18 02:01:14.893  1846  3147 I ReactNativeJS: '🌐 Fetching private massagers from:', 'http://localhost:3000/api/private-massagers?limit=20'
+01-18 02:01:14.956  1846  3147 I ReactNativeJS: '📡 Salon response status:', 200
+01-18 02:01:14.957  1846  3147 I ReactNativeJS: '📡 Private massager response status:', 200
+01-18 02:01:14.957  1846  3147 I ReactNativeJS: ⏱️ Fetch took 66ms
+01-18 02:01:14.963  1846  3147 I ReactNativeJS: '📥 Received salon recommendations:', { success: true,
+01-18 02:01:14.963  1846  3147 I ReactNativeJS:   data: 
+01-18 02:01:14.963  1846  3147 I ReactNativeJS:    [ { id: 1, name: 'Sample Salon 1', rating: 4.5 },
+01-18 02:01:14.963  1846  3147 I ReactNativeJS:      { id: 2, name: 'Sample Salon 2', rating: 4.8 } ] }
+01-18 02:01:14.968  1846  3147 I ReactNativeJS: '📥 Received private massagers:', { success: true,
+01-18 02:01:14.968  1846  3147 I ReactNativeJS:   data: 
+01-18 02:01:14.968  1846  3147 I ReactNativeJS:    [ { id: 1, name: 'Massager 1', experience: '5 years' },
+01-18 02:01:14.968  1846  3147 I ReactNativeJS:      { id: 2, name: 'Massager 2', experience: '3 years' } ] }
+01-18 02:01:14.969  1846  3147 I ReactNativeJS: ✅ Found 2 private massagers
+01-18 02:01:14.970  1846  3147 I ReactNativeJS: '📥 Combined data:', { success: true,
+01-18 02:01:14.970  1846  3147 I ReactNativeJS:   salonRecommendations: 
+01-18 02:01:14.970  1846  3147 I ReactNativeJS:    [ { id: 1, name: 'Sample Salon 1', rating: 4.5 },
+01-18 02:01:14.970  1846  3147 I ReactNativeJS:      { id: 2, name: 'Sample Salon 2', rating: 4.8 } ],
+01-18 02:01:14.970  1846  3147 I ReactNativeJS:   privateMassagers: 
+01-18 02:01:14.970  1846  3147 I ReactNativeJS:    [ { id: 1, name: 'Massager 1', experience: '5 years' },
+01-18 02:01:14.970  1846  3147 I ReactNativeJS:      { id: 2, name: 'Massager 2', experience: '3 years' } ] }
+01-18 02:01:14.976  1846  3147 I ReactNativeJS: ✅ Loaded 2 salons and 2 private massagers
+01-18 02:01:14.976  1846  3147 I ReactNativeJS: ✅ Total providers: 4 (0 subscribed, 4 regular)
+01-18 02:01:14.977  1846  3147 I ReactNativeJS: ⏱️ Total loading time: 86ms
+01-18 02:01:15.097  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:15.099  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:15.100  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:15.102  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `doc`. Please use `doc()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:18.536  1846  3147 I ReactNativeJS: '📤 Sending booking request for studio:', 'Sample Salon 1'
+01-18 02:01:18.544  1846  3147 I ReactNativeJS: '🔍 Starting booking request for provider:', '{\n  "id": 1,\n  "providerType": "salon",\n  "name": "Sample Salon 1",\n  "price": 0,\n  "rating": 0,\n  "location": "Location unavailable",\n  "services": [],\n  "imageUrl": null,\n  "score": 0,\n  "reasons": [],\n  "isSubscribed": false,\n  "ownerId": null,\n  "salonId": 1\n}'
+01-18 02:01:18.544  1846  3147 I ReactNativeJS: '🔍 Provider type:', 'salon'
+01-18 02:01:18.545  1846  3147 I ReactNativeJS: '🔍 Provider ownerId:', null
+01-18 02:01:18.547  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:18.548  1846  3147 I ReactNativeJS: '👤 User UID:', 'CNEetgfdTlgCHEqxtOzQzoB44vN2'
+01-18 02:01:18.548  1846  3147 I ReactNativeJS: '🏢 Salon ID:', 1
+01-18 02:01:18.549  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:18.551  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:18.556  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `doc`. Please use `doc()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:19.130  1846  3147 I ReactNativeJS: '📧 User email:', 'esam@gmail.com'
+01-18 02:01:19.131  1846  3147 I ReactNativeJS: '🔍 Initial ownerId from provider:', null
+01-18 02:01:19.131  1846  3147 I ReactNativeJS: 🔍 Fetching salon owner ID from backend...
+01-18 02:01:19.192  1846  3147 E ReactNativeJS: ❌ Could not find ownerId
+01-18 02:01:19.209  1846  3147 I ReactNativeJS: '📥 Booking result:', { success: false,
+01-18 02:01:19.209  1846  3147 I ReactNativeJS:   error: 
+01-18 02:01:19.209  1846  3147 I ReactNativeJS:    { error: 'Salon owner information is missing.',
+01-18 02:01:19.209  1846  3147 I ReactNativeJS:      message: 'Unable to send booking request. Please try another provider or contact support.' } }
+01-18 02:01:19.209  1846  3147 E ReactNativeJS: '❌ Booking failed:', 'Salon owner information is missing.'
+01-18 02:01:21.754  1846  3147 W ReactNativeJS: 'Got a component with the name \'options\' for the screen \'options\'. React Components must start with an uppercase letter. If you\'re passing a regular function and not a component, pass it as children to \'Screen\' instead. Otherwise capitalize your component\'s name.', { [Stack] name: 'Stack' }
+01-18 02:01:21.793  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:21.796  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:21.799  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:21.802  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `where`. Please use `where()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:22.327  1846  3147 E ReactNativeJS: 'Error fetching from Firestore:', [Error: [firestore/failed-precondition] The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/luci-app-443ca/firestore/indexes?create_composite=Ck9wcm9qZWN0cy9sdWNpLWFwcC00NDNjYS9kYXRhYmFzZXMvKGRlZmF1bHQpL2NvbGxlY3Rpb25Hcm91cHMvYm9va2luZ3MvaW5kZXhlcy9fEAEaDwoLZmlyZWJhc2VVSUQQARoNCgljcmVhdGVkQXQQAhoMCghfX25hbWVfXxAC]
+01-18 02:01:23.220  1846  3147 W ReactNativeJS: 'Got a component with the name \'options\' for the screen \'options\'. React Components must start with an uppercase letter. If you\'re passing a regular function and not a component, pass it as children to \'Screen\' instead. Otherwise capitalize your component\'s name.', { [Stack] name: 'Stack' }
+01-18 02:01:26.536  1846  3147 W ReactNativeJS: 'Got a component with the name \'options\' for the screen \'options\'. React Components must start with an uppercase letter. If you\'re passing a regular function and not a component, pass it as children to \'Screen\' instead. Otherwise capitalize your component\'s name.', { [Stack] name: 'Stack' }
+01-18 02:01:26.583  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:26.591  1846  3147 W ReactNativeJS: 'Got a component with the name \'options\' for the screen \'options\'. React Components must start with an uppercase letter. If you\'re passing a regular function and not a component, pass it as children to \'Screen\' instead. Otherwise capitalize your component\'s name.', { [Stack] name: 'Stack' }
+01-18 02:01:26.605  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:26.607  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:26.609  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:26.610  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `doc`. Please use `doc()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:27.217  1846  3147 E ReactNativeJS: 'Error fetching user:', [Error: Failed to fetch user]
+01-18 02:01:27.220  1846  3147 I ReactNativeJS: '⚠️ User not found, registering...', 'Failed to fetch user'
+01-18 02:01:27.282  1846  3147 E ReactNativeJS: 'Error registering user:', [Error: Failed to register user]
+01-18 02:01:27.285  1846  3147 E ReactNativeJS: 'Error ensuring user registration:', [Error: Failed to register user]
+01-18 02:01:27.864  1846  3147 E ReactNativeJS: 'Error fetching conversations:', [Error: Failed to fetch conversations]
+01-18 02:01:27.868  1846  3147 E ReactNativeJS: 'Error loading conversations:', [Error: Failed to fetch conversations]
+01-18 02:01:27.872  1846  3147 E ReactNativeJS: 'Failed to load conversations:', [Error: Failed to fetch conversations]
+01-18 02:01:48.924  1846  3147 W ReactNativeJS: 'Got a component with the name \'options\' for the screen \'options\'. React Components must start with an uppercase letter. If you\'re passing a regular function and not a component, pass it as children to \'Screen\' instead. Otherwise capitalize your component\'s name.', { [Stack] name: 'Stack' }
+01-18 02:01:48.957  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:48.959  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:48.960  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:48.962  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `doc`. Please use `doc()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:49.454  1846  3147 I ReactNativeJS: 🔄 Fetching recommendations...
+01-18 02:01:49.455  1846  3147 W ReactNativeJS: This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.
+01-18 02:01:49.457  1846  3147 I ReactNativeJS: '🌐 API_BASE_URL:', 'http://localhost:3000'
+01-18 02:01:49.458  1846  3147 I ReactNativeJS: '🌐 Fetching salon recommendations from:', 'http://localhost:3000/api/v1/recommendations/CNEetgfdTlgCHEqxtOzQzoB44vN2?limit=20&latitude=24.8607&longitude=67.0011'
+01-18 02:01:49.459  1846  3147 I ReactNativeJS: '🌐 Fetching private massagers from:', 'http://localhost:3000/api/private-massagers?limit=20'
+01-18 02:01:49.529  1846  3147 I ReactNativeJS: '📡 Salon response status:', 200
+01-18 02:01:49.530  1846  3147 I ReactNativeJS: '📡 Private massager response status:', 200
+01-18 02:01:49.530  1846  3147 I ReactNativeJS: ⏱️ Fetch took 77ms
+01-18 02:01:49.536  1846  3147 I ReactNativeJS: '📥 Received salon recommendations:', { success: true,
+01-18 02:01:49.536  1846  3147 I ReactNativeJS:   data: 
+01-18 02:01:49.536  1846  3147 I ReactNativeJS:    [ { id: 1, name: 'Sample Salon 1', rating: 4.5 },
+01-18 02:01:49.536  1846  3147 I ReactNativeJS:      { id: 2, name: 'Sample Salon 2', rating: 4.8 } ] }
+01-18 02:01:49.540  1846  3147 I ReactNativeJS: '📥 Received private massagers:', { success: true,
+01-18 02:01:49.540  1846  3147 I ReactNativeJS:   data: 
+01-18 02:01:49.540  1846  3147 I ReactNativeJS:    [ { id: 1, name: 'Massager 1', experience: '5 years' },
+01-18 02:01:49.540  1846  3147 I ReactNativeJS:      { id: 2, name: 'Massager 2', experience: '3 years' } ] }
+01-18 02:01:49.540  1846  3147 I ReactNativeJS: ✅ Found 2 private massagers
+01-18 02:01:49.542  1846  3147 I ReactNativeJS: '📥 Combined data:', { success: true,
+01-18 02:01:49.542  1846  3147 I ReactNativeJS:   salonRecommendations: 
+01-18 02:01:49.542  1846  3147 I ReactNativeJS:    [ { id: 1, name: 'Sample Salon 1', rating: 4.5 },
+01-18 02:01:49.542  1846  3147 I ReactNativeJS:      { id: 2, name: 'Sample Salon 2', rating: 4.8 } ],
+01-18 02:01:49.542  1846  3147 I ReactNativeJS:   privateMassagers: 
+01-18 02:01:49.542  1846  3147 I ReactNativeJS:    [ { id: 1, name: 'Massager 1', experience: '5 years' },
+01-18 02:01:49.542  1846  3147 I ReactNativeJS:      { id: 2, name: 'Massager 2', experience: '3 years' } ] }
+01-18 02:01:49.543  1846  3147 I ReactNativeJS: ✅ Loaded 2 salons and 2 private massagers
+01-18 02:01:49.543  1846  3147 I ReactNativeJS: ✅ Total providers: 4 (0 subscribed, 4 regular)
+01-18 02:01:49.544  1846  3147 I ReactNativeJS: ⏱️ Total loading time: 90ms
+01-18 02:01:49.611  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:49.613  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:49.616  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:49.618  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `doc`. Please use `doc()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:52.759  1846  3147 W ReactNativeJS: 'Got a component with the name \'options\' for the screen \'options\'. React Components must start with an uppercase letter. If you\'re passing a regular function and not a component, pass it as children to \'Screen\' instead. Otherwise capitalize your component\'s name.', { [Stack] name: 'Stack' }
+01-18 02:01:52.812  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:52.827  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:52.828  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:52.830  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:52.832  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `doc`. Please use `doc()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:53.398  1846  3147 E ReactNativeJS: 'Error fetching user:', [Error: Failed to fetch user]
+01-18 02:01:53.404  1846  3147 I ReactNativeJS: '⚠️ User not found, registering...', 'Failed to fetch user'
+01-18 02:01:53.457  1846  3147 E ReactNativeJS: 'Error registering user:', [Error: Failed to register user]
+01-18 02:01:53.459  1846  3147 E ReactNativeJS: 'Error ensuring user registration:', [Error: Failed to register user]
+01-18 02:01:54.024  1846  3147 E ReactNativeJS: 'Error fetching conversations:', [Error: Failed to fetch conversations]
+01-18 02:01:54.029  1846  3147 E ReactNativeJS: 'Error loading conversations:', [Error: Failed to fetch conversations]
+01-18 02:01:54.032  1846  3147 E ReactNativeJS: 'Failed to load conversations:', [Error: Failed to fetch conversations]
+01-18 02:01:56.305  1846  3147 W ReactNativeJS: 'Got a component with the name \'options\' for the screen \'options\'. React Components must start with an uppercase letter. If you\'re passing a regular function and not a component, pass it as children to \'Screen\' instead. Otherwise capitalize your component\'s name.', { [Stack] name: 'Stack' }
+01-18 02:01:56.336  1846  3147 W ReactNativeJS: 'SafeAreaView has been deprecated and will be removed in a future release. Please use \'react-native-safe-area-context\' instead. See https://github.com/AppAndFlow/react-native-safe-area-context', { [Stack] name: 'Stack' }
+01-18 02:01:56.360  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:56.361  1846  3147 I ReactNativeJS: 'Fetching user data for:', 'CNEetgfdTlgCHEqxtOzQzoB44vN2'
+01-18 02:01:56.363  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:56.364  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:56.366  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `doc`. Please use `doc()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:56.931  1846  3147 I ReactNativeJS: 'User data loaded:', { tourCompletedAt: { _seconds: 1768681086, _nanoseconds: 433000000 },
+01-18 02:01:56.931  1846  3147 I ReactNativeJS:   location: 
+01-18 02:01:56.931  1846  3147 I ReactNativeJS:    { longitude: -5.7983899,
+01-18 02:01:56.931  1846  3147 I ReactNativeJS:      accuracy: 17.398000717163086,
+01-18 02:01:56.931  1846  3147 I ReactNativeJS:      fullAddress: 'Tangier, Pachalik de Tanger باشوية طنجة, Prefecture of Tangier - Assilah, Tangier-Tetouan-Al Hoceima, Morocco',
+01-18 02:01:56.931  1846  3147 I ReactNativeJS:      latitude: 35.7746884,
+01-18 02:01:56.931  1846  3147 I ReactNativeJS:      city: 'Tangier',
+01-18 02:01:56.931  1846  3147 I ReactNativeJS:      country: 'Morocco' },
+01-18 02:01:56.931  1846  3147 I ReactNativeJS:   name: 'Esam',
+01-18 02:01:56.931  1846  3147 I ReactNativeJS:   updatedAt: { _seconds: 1768680908, _nanoseconds: 11000000 },
+01-18 02:01:56.931  1846  3147 I ReactNativeJS:   locationCompleted: true,
+01-18 02:01:56.931  1846  3147 I ReactNativeJS:   profileCompleted: true,
+01-18 02:01:56.931  1846  3147 I ReactNativeJS:   gender: 'Male',
+01-18 02:01:56.931  1846  3147 I ReactNativeJS:   tourCompleted: true }
+01-18 02:01:59.280  1846  3147 W ReactNativeJS: 'Got a component with the name \'options\' for the screen \'options\'. React Components must start with an uppercase letter. If you\'re passing a regular function and not a component, pass it as children to \'Screen\' instead. Otherwise capitalize your component\'s name.', { [Stack] name: 'Stack' }
+01-18 02:01:59.328  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:59.329  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:59.331  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:59.333  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `doc`. Please use `doc()` instead.', { [Stack] name: 'Stack' }
+01-18 02:01:59.891  1846  3147 I ReactNativeJS: 🔄 Fetching recommendations...
+01-18 02:01:59.896  1846  3147 W ReactNativeJS: This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.
+01-18 02:01:59.899  1846  3147 I ReactNativeJS: '🌐 API_BASE_URL:', 'http://localhost:3000'
+01-18 02:01:59.900  1846  3147 I ReactNativeJS: '🌐 Fetching salon recommendations from:', 'http://localhost:3000/api/v1/recommendations/CNEetgfdTlgCHEqxtOzQzoB44vN2?limit=20&latitude=24.8607&longitude=67.0011'
+01-18 02:01:59.901  1846  3147 I ReactNativeJS: '🌐 Fetching private massagers from:', 'http://localhost:3000/api/private-massagers?limit=20'
+01-18 02:01:59.951  1846  3147 I ReactNativeJS: '📡 Salon response status:', 200
+01-18 02:01:59.951  1846  3147 I ReactNativeJS: '📡 Private massager response status:', 200
+01-18 02:01:59.952  1846  3147 I ReactNativeJS: ⏱️ Fetch took 61ms
+01-18 02:01:59.955  1846  3147 I ReactNativeJS: '📥 Received salon recommendations:', { success: true,
+01-18 02:01:59.955  1846  3147 I ReactNativeJS:   data: 
+01-18 02:01:59.955  1846  3147 I ReactNativeJS:    [ { id: 1, name: 'Sample Salon 1', rating: 4.5 },
+01-18 02:01:59.955  1846  3147 I ReactNativeJS:      { id: 2, name: 'Sample Salon 2', rating: 4.8 } ] }
+01-18 02:01:59.960  1846  3147 I ReactNativeJS: '📥 Received private massagers:', { success: true,
+01-18 02:01:59.960  1846  3147 I ReactNativeJS:   data: 
+01-18 02:01:59.960  1846  3147 I ReactNativeJS:    [ { id: 1, name: 'Massager 1', experience: '5 years' },
+01-18 02:01:59.960  1846  3147 I ReactNativeJS:      { id: 2, name: 'Massager 2', experience: '3 years' } ] }
+01-18 02:01:59.960  1846  3147 I ReactNativeJS: ✅ Found 2 private massagers
+01-18 02:01:59.962  1846  3147 I ReactNativeJS: '📥 Combined data:', { success: true,
+01-18 02:01:59.962  1846  3147 I ReactNativeJS:   salonRecommendations: 
+01-18 02:01:59.962  1846  3147 I ReactNativeJS:    [ { id: 1, name: 'Sample Salon 1', rating: 4.5 },
+01-18 02:01:59.962  1846  3147 I ReactNativeJS:      { id: 2, name: 'Sample Salon 2', rating: 4.8 } ],
+01-18 02:01:59.962  1846  3147 I ReactNativeJS:   privateMassagers: 
+01-18 02:01:59.962  1846  3147 I ReactNativeJS:    [ { id: 1, name: 'Massager 1', experience: '5 years' },
+01-18 02:01:59.962  1846  3147 I ReactNativeJS:      { id: 2, name: 'Massager 2', experience: '3 years' } ] }
+01-18 02:01:59.962  1846  3147 I ReactNativeJS: ✅ Loaded 2 salons and 2 private massagers
+01-18 02:01:59.962  1846  3147 I ReactNativeJS: ✅ Total providers: 4 (0 subscribed, 4 regular)
+01-18 02:01:59.963  1846  3147 I ReactNativeJS: ⏱️ Total loading time: 73ms
+01-18 02:02:00.024  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 02:02:00.025  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 02:02:00.027  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.', { [Stack] name: 'Stack' }
+01-18 02:02:00.029  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `doc`. Please use `doc()` instead.', { [Stack] name: 'Stack' }
+01-18 02:02:00.825  1846  3147 W ReactNativeJS: 'Got a component with the name \'options\' for the screen \'options\'. React Components must start with an uppercase letter. If you\'re passing a regular function and not a component, pass it as children to \'Screen\' instead. Otherwise capitalize your component\'s name.', { [Stack] name: 'Stack' }
+01-18 02:02:00.884  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 02:02:00.886  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.', { [Stack] name: 'Stack' }
+01-18 02:02:00.888  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `collection`. Please use `collection()` instead.', { [Stack] name: 'Stack' }
+01-18 02:02:00.890  1846  3147 W ReactNativeJS: 'This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `where`. Please use `where()` instead.', { [Stack] name: 'Stack' }
+01-18 02:02:01.425  1846  3147 E ReactNativeJS: 'Error fetching from Firestore:', [Error: [firestore/failed-precondition] The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/luci-app-443ca/firestore/indexes?create_composite=Ck9wcm9qZWN0cy9sdWNpLWFwcC00NDNjYS9kYXRhYmFzZXMvKGRlZmF1bHQpL2NvbGxlY3Rpb25Hcm91cHMvYm9va2luZ3MvaW5kZXhlcy9fEAEaDwoLZmlyZWJhc2VVSUQQARoNCgljcmVhdGVkQXQQAhoMCghfX25hbWVfXxAC]
