@@ -20,6 +20,10 @@
             "package_name": "com.thaimassageapp",
             "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
           }
+        },
+        {
+          "client_id": "164432241102-2ubmgo9etcjv28dlqrdqgl4plsrlpv8j.apps.googleusercontent.com",
+          "client_type": 3
         }
       ],
       "api_key": [
@@ -29,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "164432241102-2ubmgo9etcjv28dlqrdqgl4plsrlpv8j.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "164432241102-rp7nvvvjksl1h6nae94857gs7nklkgm7.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.thaimassageapp"
+              }
+            }
+          ]
         }
       }
     }
