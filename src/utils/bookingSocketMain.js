@@ -1,12 +1,10 @@
 // Socket.IO connection for main backend (booking notifications)
 // Main backend runs on port 3000, chat backend runs on port 5001
 import io from 'socket.io-client';
+import { API_BASE_URL } from '../config/apiConfig';
 
-// IMPORTANT: This should match your main backend URL (not chat backend)
-// IMPORTANT: This should match your main backend URL (not chat backend)
-// For Android emulator: use "http://10.0.2.2:3000"
-// For USB debugging: use localhost
-const BOOKING_SOCKET_URL = process.env.API_BASE_URL || "http://localhost:3000";
+// Use the centralized API_BASE_URL for the booking socket
+const BOOKING_SOCKET_URL = API_BASE_URL;
 
 let bookingSocket = null;
 

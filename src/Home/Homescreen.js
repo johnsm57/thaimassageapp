@@ -24,6 +24,7 @@ import { useLanguage } from "../context/LanguageContext"
 import BottomNav from "../component/BottomNav"
 import AppTourGuide from "./AppTourGuide"
 import { setupBookingListeners, navigateToChat } from "../utils/bookingSocket"
+import { API_BASE_URL } from "../config/apiConfig"
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window")
 
@@ -53,17 +54,6 @@ const CARD_WIDTH = getCardWidth()
 const CARD_HEIGHT = getCardHeight()
 const SWIPE_THRESHOLD = scale(100)
 const CARD_RAISE = verticalScale(40)
-
-// IMPORTANT: Update this to your actual backend URL
-// ⚠️ WARNING: localhost won't work on physical devices!
-// For Android emulator: use "http://10.0.2.2:3000"
-// For physical device: use your computer's IP (e.g., "http://192.168.x.x:3000")
-// Find your IP: Mac/Linux: ifconfig | grep "inet " | grep -v 127.0.0.1
-// IMPORTANT: Update this to your actual backend URL
-// ⚠️ WARNING: localhost won't work on physical devices!
-// For Android emulator: use "http://10.0.2.2:3000" 
-// For USB debugging: use localhost
-const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:3000"
 
 const Homescreen = ({ navigation }) => {
   const { currentLanguage, t, formatText, translateDynamic } = useLanguage()

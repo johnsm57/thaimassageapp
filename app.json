@@ -1,4 +1,39 @@
 {
-  "name": "thaimassageapp",
-  "displayName": "thaimassageapp"
+  "expo": {
+    "name": "thaimassageapp",
+    "displayName": "Thai Massage",
+    "slug": "thaimassageapp",
+    "owner": "luci.xyz",
+    "scheme": "thaimassageapp",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.luci.thaimassageapp"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "c55ce08a-756a-4762-9540-3e8dbdd4c128"
+      }
+    }
+  }
 }

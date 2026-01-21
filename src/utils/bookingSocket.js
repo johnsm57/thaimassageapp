@@ -4,6 +4,7 @@
 import { getBookingSocket, connectBookingUser } from './bookingSocketMain';
 import { getSocket } from './socket'; // Chat socket
 import { chatApi } from './chatApi';
+import auth from '@react-native-firebase/auth';
 
 /**
  * Setup booking notification listeners
@@ -85,7 +86,7 @@ export const navigateToChat = async (navigation, conversationId, salonOwnerId, s
     console.log('🚀 navigateToChat called with:', { conversationId, salonOwnerId, salonOwnerName });
     
     // Get or create conversation
-    const currentUser = require('@react-native-firebase/auth').default().currentUser;
+    const currentUser = auth().currentUser;
     if (!currentUser) {
       console.error('❌ User not authenticated');
       return;

@@ -1,4 +1,4 @@
-package com.esam_hafz.thaimassageapp
+package com.luci.thaimassageapp
 
 import android.app.Application
 import android.content.res.Configuration

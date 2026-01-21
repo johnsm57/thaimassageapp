@@ -42,6 +42,10 @@ npm-debug.log
 yarn-error.log
 .env
 
+# Firebase configuration files
+**/google-services.json
+**/GoogleService-Info.plist
+
 # fastlane
 #
 # It is recommended to not store the screenshots in the git repo. Instead, use fastlane to re-generate the

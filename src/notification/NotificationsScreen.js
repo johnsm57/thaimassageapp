@@ -16,11 +16,9 @@ import { useLanguage } from '../context/LanguageContext';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { API_BASE_URL } from '../config/apiConfig';
 
-// IMPORTANT: Update this to your actual backend URL
-// For Android emulator: use "http://10.0.2.2:3000"
-// For USB debugging: use localhost
-const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:3000";
+// Use the centralized API_BASE_URL for API requests
 const USE_BACKEND_API = false; // Set to true once backend endpoint is ready
 
 const NotificationsScreen = ({ navigation }) => {
