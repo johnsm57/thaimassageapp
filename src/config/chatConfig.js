@@ -18,9 +18,8 @@
 // 🌐 FOR PRODUCTION:
 //   Use your deployed backend URL: 'https://your-backend.com'
 
-// Using localhost with ADB reverse tunnel (adb reverse tcp:3000 tcp:3000)
-// For physical device: run 'adb reverse tcp:3000 tcp:3000' to enable tunneling
-const CHAT_BACKEND_URL = process.env.CHAT_BACKEND_URL || 'http://localhost:3000';
+// Production chat backend URL
+const CHAT_BACKEND_URL = 'https://api-4evlextkmq-uc.a.run.app';
 
 export const CHAT_CONFIG = {
   SOCKET_URL: CHAT_BACKEND_URL,

@@ -1,0 +1,54 @@
+const functions = require('firebase-functions');
+const admin = require('firebase-admin');
+const express = require('express');
+const cors = require('cors');
+const nodemailer = require('nodemailer');
+
+// Initialize Firebase Admin
+admin.initializeApp();
+
+// Create Express app
+const app = express();
+
+// Middleware
+app.use(cors({ origin: true }));
+app.use(express.json());
+
+// Health check endpoint
+app.get('/', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    message: 'Firebase Cloud Functions API is running',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// GET /salons endpoint
+app.get('/salons', async (req, res) => {
+  try {
+    const salonsSnapshot = await admin.firestore().collection('salons').get();
+    const salons = [];
+    
+    salonsSnapshot.forEach(doc => {
+      salons.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    
+    res.json({
+      success: true,
+      data: salons
+    });
+  } catch (error) {
+    console.error('Error fetching salons:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch salons',
+      details: error.message
+    });
+  }
+});
+
+// Export the Express app as a Firebase Cloud Function
+exports.api = functions.https.onRequest(app);

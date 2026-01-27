@@ -54,23 +54,22 @@ const ChatScreen = ({ route, navigation }) => {
     translateName();
   }, [receiverName, currentLanguage]);
 
-  // Initialize Socket.IO connection
+  // WebSocket functionality is disabled - Firebase Cloud Functions do not support persistent connections
   useEffect(() => {
+    console.warn('WebSocket disabled - Firebase Cloud Functions do not support persistent connections');
+    
+    // Load messages without WebSocket
     if (currentUserId) {
-    initializeSocket();
-    loadMessages();
+      loadMessages();
     }
-
+    
     return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-      }
+      // Cleanup if needed
     };
   }, [currentUserId, conversationId]);
 
   const initializeSocket = () => {
-    socketRef.current = getSocket(currentUserId);
-
+    // WebSocket functionality is disabled
     // Connection events
     socketRef.current.on('connect', () => {
       console.log('Connected to socket server');

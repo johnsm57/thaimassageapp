@@ -1,49 +1,45 @@
-// Socket.IO connection utility
-import io from 'socket.io-client';
-import { CHAT_CONFIG } from '../config/chatConfig';
+// WebSocket functionality is disabled - Firebase Cloud Functions do not support persistent connections
+console.warn('WebSocket disabled - Firebase Cloud Functions do not support persistent connections');
 
-const SOCKET_URL = CHAT_CONFIG.SOCKET_URL;
-
-let socket = null;
-
-export const getSocket = (userId) => {
-  if (!socket || !socket.connected) {
-    socket = io(SOCKET_URL, {
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionAttempts: 5,
-      timeout: 20000,
-    });
-
-    // Connect user when socket is ready
-    if (userId) {
-      socket.on('connect', () => {
-        console.log('Socket connected, emitting user_connected:', userId);
-        socket.emit('user_connected', userId);
-      });
-    }
+// Mock socket implementation to prevent crashes
+const mockSocket = {
+  connected: false,
+  on: (event, callback) => {
+    console.log(`[Mock Socket] Added ${event} listener`);
+  },
+  emit: (event, ...args) => {
+    console.log(`[Mock Socket] Emitted ${event}`, args);
+  },
+  disconnect: () => {
+    console.log('[Mock Socket] Disconnected');
   }
+};
 
+let socket = mockSocket;
+
+/**
+ * Get mock socket instance
+ * @param {string} userId - User ID (not used in mock)
+ * @returns {Object} Mock socket instance
+ */
+export const getSocket = (userId) => {
+  console.warn('WebSocket disabled - getSocket called with userId:', userId);
   return socket;
 };
 
+/**
+ * Disconnect socket (no-op in mock)
+ */
 export const disconnectSocket = () => {
-  if (socket) {
-    socket.disconnect();
-    socket = null;
-  }
+  console.log('[Mock Socket] Disconnect requested');
+  socket = mockSocket;
 };
 
+/**
+ * Connect user (no-op in mock)
+ * @param {string} userId - User ID to connect
+ */
 export const connectUser = (userId) => {
-  if (!socket) {
-    socket = getSocket(userId);
-  } else if (socket.connected) {
-    socket.emit('user_connected', userId);
-  } else {
-    socket.on('connect', () => {
-      socket.emit('user_connected', userId);
-    });
-  }
+  console.warn('WebSocket disabled - connectUser called with userId:', userId);
 };
 

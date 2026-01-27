@@ -43,7 +43,6 @@ yarn-error.log
 .env
 
 # Firebase configuration files
-**/google-services.json
 **/GoogleService-Info.plist
 
 # fastlane

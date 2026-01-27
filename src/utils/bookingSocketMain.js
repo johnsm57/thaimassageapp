@@ -6,55 +6,25 @@ import { API_BASE_URL } from '../config/apiConfig';
 // Use the centralized API_BASE_URL for the booking socket
 const BOOKING_SOCKET_URL = API_BASE_URL;
 
-let bookingSocket = null;
+// WebSocket functionality is disabled - Firebase Cloud Functions do not support persistent connections
+console.warn('WebSocket disabled - Firebase Cloud Functions do not support persistent connections');
+
+// Mock socket object to prevent crashes
+const mockSocket = {
+  connected: false,
+  on: () => {},
+  emit: () => {},
+  disconnect: () => {}
+};
+
+let bookingSocket = mockSocket;
 
 /**
- * Get booking socket connection (main backend)
+ * Get booking socket connection (disabled)
  * @param {string} userId - User's Firebase UID or salon owner ID
  */
 export const getBookingSocket = (userId) => {
-  if (!bookingSocket || !bookingSocket.connected) {
-    console.log('🔌 Attempting to connect booking socket to:', BOOKING_SOCKET_URL);
-    
-    bookingSocket = io(BOOKING_SOCKET_URL, {
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionAttempts: 5,
-      timeout: 20000,
-      forceNew: true, // Force a new connection
-    });
-
-    // Connect user when socket is ready
-    if (userId) {
-      bookingSocket.on('connect', () => {
-        console.log('✅ Booking socket connected successfully, emitting user_connected:', userId);
-        bookingSocket.emit('user_connected', userId);
-      });
-    }
-
-    bookingSocket.on('disconnect', (reason) => {
-      console.log('❌ Booking socket disconnected. Reason:', reason);
-    });
-
-    bookingSocket.on('connect_error', (error) => {
-      console.error('❌ Booking socket connection error:', error.message);
-      console.error('❌ Socket URL:', BOOKING_SOCKET_URL);
-      console.error('❌ Error details:', error);
-    });
-
-    bookingSocket.on('reconnect', (attemptNumber) => {
-      console.log('🔄 Booking socket reconnected after', attemptNumber, 'attempts');
-      if (userId) {
-        bookingSocket.emit('user_connected', userId);
-      }
-    });
-
-    bookingSocket.on('reconnect_error', (error) => {
-      console.error('❌ Booking socket reconnection error:', error.message);
-    });
-  }
-
+  console.warn('WebSocket disabled - getBookingSocket called with userId:', userId);
   return bookingSocket;
 };
 
@@ -62,9 +32,17 @@ export const getBookingSocket = (userId) => {
  * Disconnect booking socket
  */
 export const disconnectBookingSocket = () => {
-  if (bookingSocket) {
-    bookingSocket.disconnect();
-    bookingSocket = null;
+  try {
+    if (bookingSocket) {
+      if (typeof bookingSocket.disconnect === 'function') {
+        bookingSocket.disconnect();
+      } else if (bookingSocket.close) {
+        bookingSocket.close();
+      }
+      bookingSocket = null;
+    }
+  } catch (error) {
+    console.warn('Error disconnecting booking socket:', error);
   }
 };
 

@@ -70,11 +70,19 @@ export const setupBookingListeners = (firebaseUID, callbacks = {}) => {
  * Remove booking listeners
  */
 export const removeBookingListeners = (firebaseUID) => {
-  const socket = getBookingSocket(firebaseUID);
-  
-  socket.off('booking_status_update');
-  socket.off('chat_room_created');
-  socket.off('booking_notification');
+  try {
+    const socket = getBookingSocket(firebaseUID);
+    
+    if (socket && typeof socket.off === 'function') {
+      socket.off('booking_status_update');
+      socket.off('chat_room_created');
+      socket.off('booking_notification');
+    } else {
+      console.warn('Socket not available or does not support .off()');
+    }
+  } catch (error) {
+    console.warn('Error removing booking listeners:', error);
+  }
 };
 
 /**

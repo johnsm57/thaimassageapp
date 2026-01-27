@@ -1,9 +1,7 @@
 import firestore from '@react-native-firebase/firestore';
 
-// Your backend URL - REPLACE WITH YOUR ACTUAL URL
-const BACKEND_URL = 'https://sssdg2giif.execute-api.us-east-1.amazonaws.com'; // For testing on emulator
-// For real device on same network, use: http://YOUR_COMPUTER_IP:3000
-// For production, use your deployed URL:  https://your-app.railway.app
+// Production backend URL
+const BACKEND_URL = 'https://api-4evlextkmq-uc.a.run.app';
 
 /**
  * Generate a 4-digit OTP

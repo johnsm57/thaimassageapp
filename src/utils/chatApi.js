@@ -1,17 +1,22 @@
 // API utility for chat backend communication
 import { CHAT_CONFIG } from '../config/chatConfig';
 
-const API_BASE_URL = CHAT_CONFIG.API_URL ;
+const API_BASE_URL = CHAT_CONFIG.API_URL;
+console.log('Chat API initialized with base URL:', API_BASE_URL);
 
 export const chatApi = {
   // User endpoints
   async registerUser(userData) {
     try {
+      console.log('Attempting to register user:', userData);
+      console.log('Full URL:', `${API_BASE_URL}/users/register`);
       const response = await fetch(`${API_BASE_URL}/users/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData),
       });
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
       // Accept both 200 (user exists) and 201 (user created) as success
       if (response.status === 200 || response.status === 201) {
         return response.json();
@@ -26,7 +31,10 @@ export const chatApi = {
 
   async getUser(userId) {
     try {
+      console.log('Fetching user with ID:', userId);
+      console.log('Full URL:', `${API_BASE_URL}/users/${userId}`);
       const response = await fetch(`${API_BASE_URL}/users/${userId}`);
+      console.log('Response status:', response.status);
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || 'Failed to fetch user');
@@ -55,7 +63,10 @@ export const chatApi = {
   // Conversation endpoints
   async getConversations(userId) {
     try {
+      console.log('Fetching conversations for user ID:', userId);
+      console.log('Full URL:', `${API_BASE_URL}/conversations/${userId}`);
       const response = await fetch(`${API_BASE_URL}/conversations/${userId}`);
+      console.log('Response status:', response.status);
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || 'Failed to fetch conversations');

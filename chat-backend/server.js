@@ -570,9 +570,9 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start the server
-server.listen(PORT, () => {
-  console.log(`🚀 OTP Email Service running on port ${PORT}`);
-  console.log(`📧 Email user: ${process.env.EMAIL_USER}`);
-  console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+// Server startup is handled by Firebase Cloud Functions
+// server.listen(PORT, () => {
+//   console.log(`🚀 OTP Email Service running on port ${PORT}`);
+//   console.log(`📧 Email user: ${process.env.EMAIL_USER}`);
+//   console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+// });

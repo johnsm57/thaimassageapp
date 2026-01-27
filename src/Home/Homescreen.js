@@ -25,6 +25,7 @@ import BottomNav from "../component/BottomNav"
 import AppTourGuide from "./AppTourGuide"
 import { setupBookingListeners, navigateToChat } from "../utils/bookingSocket"
 import { API_BASE_URL } from "../config/apiConfig"
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window")
 
@@ -70,16 +71,132 @@ const Homescreen = ({ navigation }) => {
   const [error, setError] = useState(null)
   const [firebaseUID, setFirebaseUID] = useState(null)
   const [bookingInProgress, setBookingInProgress] = useState(false)
+  const [showTour, setShowTour] = useState(false)
+
+  const handleTourComplete = async () => {
+    try {
+      console.log('Tour completed');
+      await AsyncStorage.setItem('tourCompleted', 'true');
+    } catch (error) {
+      console.error('Error in handleTourComplete:', error);
+    }
+  };
 
   const position = useRef(new Animated.ValueXY()).current
   const cardOpacity = useRef(new Animated.Value(1)).current
   const notificationButtonRef = useRef(null)
   const cardRef = useRef(null)
 
+  // PanResponder for card swiping
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderMove: (_, gesture) => {
+        position.setValue({ x: gesture.dx, y: gesture.dy });
+      },
+      onPanResponderRelease: (_, gesture) => {
+        if (gesture.dx > SWIPE_THRESHOLD) {
+          // Swipe right
+          swipeRight();
+        } else if (gesture.dx < -SWIPE_THRESHOLD) {
+          // Swipe left
+          swipeLeft();
+        } else {
+          // Return to center
+          Animated.spring(position, {
+            toValue: { x: 0, y: 0 },
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    })
+  ).current;
+
+  // Add opacity animations for swipe indicators
+  const likeOpacity = position.x.interpolate({
+    inputRange: [0, SWIPE_THRESHOLD],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  });
+
+  const nopeOpacity = position.x.interpolate({
+    inputRange: [-SWIPE_THRESHOLD, 0],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+
   // Refs to store current studios data to avoid closure issues
   const studiosRef = useRef(studios)
   const translatedStudiosRef = useRef(translatedStudios)
   const currentIndexRef = useRef(currentIndex)
+
+  // Swipe functions
+  const swipeLeft = () => {
+    Animated.timing(position, {
+      toValue: { x: -SCREEN_WIDTH - 100, y: 0 },
+      duration: 250,
+      useNativeDriver: true,
+    }).start(() => {
+      setCurrentIndex((prev) => prev + 1);
+      position.setValue({ x: 0, y: 0 });
+    });
+  };
+
+  const swipeRight = async () => {
+    console.log('========================================');
+    console.log('🚀 SWIPE RIGHT TRIGGERED');
+    console.log('📍 Current Index:', currentIndex);
+    console.log('📍 Current Index Ref:', currentIndexRef.current);
+    console.log('📚 Total Studios (state):', studios.length);
+    console.log('📚 Total Studios (ref):', studiosRef.current.length);
+    
+    if (bookingInProgress) {
+      console.log('⏸️ Already booking, returning...');
+      return;
+    }
+    
+    setBookingInProgress(true);
+    
+    Animated.timing(position, {
+      toValue: { x: SCREEN_WIDTH + 100, y: 0 },
+      duration: 250,
+      useNativeDriver: true,
+    }).start();
+
+    // CRITICAL LINE - USE REF NOT STATE
+    const currentStudio = studiosRef.current[currentIndexRef.current];
+    
+    console.log('📋 Current Studio from REF:', currentStudio);
+    
+    if (currentStudio) {
+      console.log('📤 Sending booking for:', currentStudio.name);
+      
+      const result = await sendBookingRequest(currentStudio);
+      
+      console.log('📥 RESULT:', result);
+      
+      if (result.success) {
+        console.log('✅ SUCCESS!');
+        Alert.alert('Success!', 'Booking request sent successfully!');
+        setShowNotification(true);
+        setNotificationType("booking");
+        setTimeout(() => setShowNotification(false), 3000);
+      } else {
+        console.log('❌ FAILED:', result.error);
+        Alert.alert(
+          "Booking Failed",
+          typeof result.error === 'string' ? result.error : result.error?.message || "Please try again"
+        );
+      }
+    } else {
+      console.log('❌ NO STUDIO at index:', currentIndexRef.current);
+    }
+    
+    setCurrentIndex((prev) => prev + 1);
+    position.setValue({ x: 0, y: 0 });
+    setBookingInProgress(false);
+    console.log('========================================');
+  };
 
   // Update refs when state changes
   useEffect(() => {
@@ -93,6 +210,40 @@ const Homescreen = ({ navigation }) => {
   useEffect(() => {
     currentIndexRef.current = currentIndex
   }, [currentIndex])
+
+  // Measure functions
+  const measureNotificationButton = () => {
+    if (notificationButtonRef.current) {
+      notificationButtonRef.current.measure((x, y, width, height, pageX, pageY) => {
+        setNotificationButtonLayout({ top: pageY, left: pageX, width, height });
+      });
+    }
+  };
+
+  const measureCard = () => {
+    if (cardRef.current) {
+      cardRef.current.measure((x, y, width, height, pageX, pageY) => {
+        setCardLayout({ top: pageY, left: pageX, width, height });
+      });
+    }
+  };
+
+  // Check if tour should be shown on mount
+  useEffect(() => {
+    const checkTourStatus = async () => {
+      try {
+        const tourCompleted = await AsyncStorage.getItem('tourCompleted');
+        if (!tourCompleted) {
+          // Show tour only if not completed before
+          setShowTour(true);
+        }
+      } catch (error) {
+        console.error('Error checking tour status:', error);
+      }
+    };
+    
+    checkTourStatus();
+  }, []);
 
   // Setup booking socket listeners
   useEffect(() => {
@@ -193,10 +344,14 @@ const Homescreen = ({ navigation }) => {
 
     return () => {
       // Cleanup listeners when component unmounts or firebaseUID changes
-      if (socket) {
-        socket.off("booking_status_update")
-        socket.off("chat_room_created")
-        socket.off("booking_notification")
+      if (socket && typeof socket.off === 'function') {
+        try {
+          socket.off("booking_status_update");
+          socket.off("chat_room_created");
+          socket.off("booking_notification");
+        } catch (error) {
+          console.warn('Error cleaning up socket listeners:', error);
+        }
       }
     }
   }, [firebaseUID, navigation, t])
@@ -279,12 +434,22 @@ const Homescreen = ({ navigation }) => {
   }, [currentIndex])
 
   const initializeScreen = async () => {
-    await fetchUserName()
-    await fetchRecommendations()
-    setTimeout(() => {
-      measureNotificationButton()
-      measureCard()
-    }, 500)
+    try {
+      await fetchUserName()
+      await fetchRecommendations()
+      
+      // Only proceed with measurement if we have studios loaded
+      if (studios.length > 0) {
+        setTimeout(() => {
+          measureNotificationButton()
+          measureCard()
+        }, 1000) // Wait for layout
+      }
+    } catch (error) {
+      console.error("❌ Error in initializeScreen:", error);
+      setError(error.message || "Failed to initialize screen");
+      setLoading(false);
+    }
   }
 
   // Fetch Firebase UID and user name
@@ -416,491 +581,127 @@ const Homescreen = ({ navigation }) => {
 
       const data = { success: true, salonRecommendations, privateMassagers }
       console.log("📥 Combined data:", data)
+      // Debug log 1: Log raw services from API
+      console.log('📋 Raw services from API:', salonRecommendations[0]?.services || salonRecommendations[0]?.typesOfMassages || salonRecommendations[0]?.typesOfMassage || 'No services found');
 
       // Transform salon recommendations to unified format
-      const transformedSalons = (data.salonRecommendations || []).map((rec, index) => {
-        const salon = rec.salon || rec
-        const salonId = salon._id || salon.salonId || salon.id || rec._id || index
-
-        // Extract ownerId
-        let ownerId = null
-        const ownerIdSource = rec.ownerId || salon.ownerId || salon.owner?._id
-        if (ownerIdSource) {
-          ownerId = typeof ownerIdSource === "object"
-            ? (ownerIdSource._id || ownerIdSource.toString() || String(ownerIdSource))
-            : String(ownerIdSource)
-        }
-
-        // Extract price
-        let price = 0
-        try {
-          if (typeof salon.priceRange === "string") {
-            const parsed = salon.priceRange.replace(/\D/g, "")
-            price = parsed ? parseInt(parsed, 10) : 0
-          } else if (typeof salon.priceRange === "number") {
-            price = salon.priceRange
-          }
-        } catch (e) {
-          price = 0
-        }
-
-        const matchScore = rec.score || rec.matchScore || 0
-        const rating = convertScoreToRating(matchScore)
-
+      const transformedSalons = (salonRecommendations || []).map((rec, index) => {
+        const salon = rec.salon || rec;
+        const salonId = salon._id || salon.salonId || salon.id || rec._id || index;
+        
         return {
-          id: salonId,
-          providerType: "salon",
-          name: salon.salonName || salon.name || "Unknown Studio",
-          price: price,
-          rating: rating,
-          location: formatLocation(salon.location),
-          services: salon.typesOfMassages || salon.typesOfMassage || [],
-          imageUrl: salon.salonImage || salon.imageUrl || null,
-          score: matchScore,
-          reasons: rec.reasons || [],
+          id: String(salonId),
+          name: salon.name || "Salon",
+          imageUrl: salon.imageUrl || salon.profilePicture || null,
+          location: formatLocation(salon.location) || "Location not specified",
+          price: salon.price || 0,
+          rating: salon.rating || 0,
+          services: salon.services || salon.typesOfMassages || salon.typesOfMassage || [],
+          description: salon.description || "",
           isSubscribed: salon.isSubscribed || false,
-          ownerId: ownerId,
-          // Salon-specific fields
-          salonId: salonId,
-        }
-      })
+          providerType: "salon",
+          ownerId: salon.ownerId || null,
+          _id: String(salonId)
+        };
+      });
 
       // Transform private massagers to unified format
-      const transformedMassagers = (data.privateMassagers || []).map((massager) => {
-        const massagerId = massager._id || massager.id
-        const ownerId = massager.ownerId
-          ? (typeof massager.ownerId === "object" 
-              ? (massager.ownerId._id || massager.ownerId.toString()) 
-              : String(massager.ownerId))
-          : null
-
-        // For private massagers, we'll use a default score/rating
-        // In the future, this could be calculated based on user preferences
-        const defaultScore = 50 // Neutral score for private massagers
-
+      const transformedPrivateMassagers = (privateMassagers || []).map((pm, index) => {
+        const pmId = pm._id || pm.id || `pm-${index}`;
+        
         return {
-          id: massagerId,
+          id: String(pmId),
+          name: pm.name || "Private Massager",
+          imageUrl: pm.imageUrl || pm.profilePicture || null,
+          location: formatLocation(pm.location) || "Location not specified",
+          price: pm.price || 0,
+          rating: pm.rating || 0,
+          services: pm.services || pm.typesOfMassages || pm.typesOfMassage || [],
+          gender: pm.gender || null,
+          height: pm.height || null,
+          weight: pm.weight || null,
+          occupation: pm.occupation || "Massage Therapist",
+          aboutMe: pm.aboutMe || "",
+          isSubscribed: pm.isSubscribed || false,
           providerType: "privateMassager",
-          name: massager.name || "Private Massager", // Could be owner name or display name
-          price: 0, // Private massagers don't have price in the schema
-          rating: 0, // Could be calculated from reviews/ratings in the future
-          location: "", // Private massagers don't have location
-          services: [], // Could be derived from occupation or other fields
-          imageUrl: massager.profilePhoto || (massager.photos && massager.photos[0]) || null,
-          score: defaultScore,
-          reasons: [],
-          isSubscribed: massager.subscriptionID ? true : false,
-          ownerId: ownerId,
-          // Private massager-specific fields
-          privateMassagerId: massagerId,
-          gender: massager.gender || null,
-          height: massager.height || null,
-          weight: massager.weight || null,
-          aboutMe: massager.aboutMe || null,
-          occupation: massager.occupation || null,
-          photos: massager.photos || [],
-        }
-      })
+          ownerId: pm.ownerId || null,
+          _id: String(pmId)
+        };
+      });
 
-      // Combine and prioritize: subscribed providers first, then regular
-      const allProviders = [...transformedSalons, ...transformedMassagers]
+      // Combine both types of providers
+      const combined = [...transformedSalons, ...transformedPrivateMassagers];
       
-      // Separate into subscribed and non-subscribed
-      const subscribedProviders = allProviders.filter(p => p.isSubscribed)
-      const regularProviders = allProviders.filter(p => !p.isSubscribed)
-
-      // Shuffle within each group for fairness (simple shuffle)
-      const shuffleArray = (array) => {
-        const shuffled = [...array]
-        for (let i = shuffled.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-        }
-        return shuffled
-      }
-
-      const shuffledSubscribed = shuffleArray(subscribedProviders)
-      const shuffledRegular = shuffleArray(regularProviders)
-
-      // Combine with subscribed first
-      const transformedStudios = [...shuffledSubscribed, ...shuffledRegular]
-
-      console.log(`✅ Loaded ${transformedSalons.length} salons and ${transformedMassagers.length} private massagers`)
-      console.log(`✅ Total providers: ${transformedStudios.length} (${shuffledSubscribed.length} subscribed, ${shuffledRegular.length} regular)`)
-
-      setStudios(transformedStudios)
-      setCurrentIndex(0)
-
-      if (transformedStudios.length === 0) {
-        setError("There are no salons or massagers in your country")
-      } else {
-        setError(null)
-      }
-    } catch (err) {
-      console.error("❌ Error fetching recommendations:", err)
-      setError(err.message || "Failed to load recommendations")
-
-      // Keep a minimal fallback to allow UI to render in dev, but prefer real data.
-      setStudios([
-        {
-          id: "fallback-1",
-          name: "Zen Thai Studio",
-          price: 99,
-          rating: 4.5,
-          location: "Watthana, Bangkok",
-          services: ["Aromatherapy", "Oil massage", "Foot massage"],
-          imageUrl: null,
-          ownerId: null,
-        },
-      ])
-    } finally {
-      const totalTime = Date.now() - startTime
-      console.log(`⏱️ Total loading time: ${totalTime}ms`)
-      setLoading(false)
-    }
-  }
-
-  // Translate user name
-  useEffect(() => {
-    const translateName = async () => {
-      if (userName && userName !== "User") {
-        if (currentLanguage === "th") {
-          const translated = await translateDynamic(userName)
-          setTranslatedUserName(translated)
-        } else {
-          setTranslatedUserName(userName)
-        }
-      } else {
-        setTranslatedUserName(userName)
-      }
-    }
-    translateName()
-  }, [userName, currentLanguage])
-
-  // Translate studios
-  useEffect(() => {
-    const translateStudios = async () => {
-      if (studios.length === 0) {
-        setTranslatedStudios([])
-        return
-      }
-
-      if (currentLanguage === "th" && studios.length > 0) {
-        try {
-          const translated = await Promise.all(
-            studios.map(async (studio) => {
-              if (!studio) return studio
-              return {
-                ...studio,
-                name: await translateDynamic(studio.name || ""),
-                location: await translateDynamic(studio.location || ""),
-                services: await Promise.all((studio.services || []).map((service) => translateDynamic(service || ""))),
-              }
-            }),
-          )
-          // Only set translated studios if we got all of them
-          if (translated.length === studios.length) {
-            setTranslatedStudios(translated)
-          } else {
-            // Fallback to original studios if translation incomplete
-            setTranslatedStudios(studios)
-          }
-        } catch (error) {
-          // Fallback to original studios on error
-          setTranslatedStudios(studios)
-        }
-      } else {
-        setTranslatedStudios(studios)
-      }
-    }
-    translateStudios()
-  }, [currentLanguage, studios, translateDynamic])
-
-  const measureNotificationButton = () => {
-    if (notificationButtonRef.current) {
-      notificationButtonRef.current.measure((x, y, width, height, pageX, pageY) => {
-        setNotificationButtonLayout({
-          top: pageY,
-          left: pageX,
-          width: width,
-          height: height,
-          borderRadius: moderateScale(12),
-        })
-      })
-    }
-  }
-
-  const measureCard = () => {
-    if (cardRef.current) {
-      cardRef.current.measure((x, y, width, height, pageX, pageY) => {
-        setCardLayout({
-          top: pageY,
-          left: pageX,
-          width: width,
-          height: height,
-          borderRadius: moderateScale(48),
-        })
-      })
-    }
-  }
-
-  // Enhanced PanResponder for smooth Tinder-like swiping
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, gesture) => {
-        return Math.abs(gesture.dx) > 5 || Math.abs(gesture.dy) > 5
-      },
-      onPanResponderMove: (_, gesture) => {
-        position.setValue({ x: gesture.dx, y: gesture.dy * 0.2 })
-      },
-      onPanResponderRelease: (_, gesture) => {
-        if (gesture.dx > SWIPE_THRESHOLD) {
-          // swipe right -> booking
-          swipeRight()
-        } else if (gesture.dx < -SWIPE_THRESHOLD) {
-          // swipe left -> skip
-          swipeLeft()
-        } else {
-          resetPosition()
-        }
-      },
-    }),
-  ).current
-
-  const swipeRight = async () => {
-    const currentIndexValue = currentIndexRef.current
-
-    // Use refs to get latest values
-    const currentStudios = studiosRef.current
-    const currentTranslatedStudios = translatedStudiosRef.current
-    const currentIndexValueRef = currentIndexRef.current
-
-    // Use studios as source of truth to ensure data exists
-    const studiosToUse =
-      currentTranslatedStudios.length > 0 &&
-        currentTranslatedStudios.length === currentStudios.length
-        ? currentTranslatedStudios
-        : currentStudios
-
-    const currentStudio = studiosToUse[currentIndexValueRef]
-
-    if (!currentStudio) {
-      Alert.alert("Error", "No studio data available for booking")
-      return
-    }
-
-    // Set booking in progress
-    setBookingInProgress(true)
-
-    try {
-      console.log("📤 Sending booking request for studio:", currentStudio.name || currentStudio.id)
+      // Log the first few items for debugging
+      console.log("🔄 Combined studios:", combined.slice(0, 3));
       
-      // Send booking request to server BEFORE animating
-      const bookingResult = await sendBookingRequest(currentStudio)
-
-      console.log("📥 Booking result:", bookingResult)
-
-      if (bookingResult?.success) {
-        // Show success notification
-        setNotificationType("booking")
-        setShowNotification(true)
-        setTimeout(() => setShowNotification(false), 2000)
-        
-        // Animate card out after successful booking
-        Animated.parallel([
-          Animated.timing(position, {
-            toValue: { x: SCREEN_WIDTH + 100, y: 0 },
-            duration: 300,
-            useNativeDriver: true,
-          }),
-          Animated.timing(cardOpacity, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-        ]).start(() => {
-          // Advance to next card
-          nextCard()
-          setBookingInProgress(false)
-        })
-      } else {
-        // Show error notification - DON'T advance card
-        const errorMessage = bookingResult?.error?.error || 
-                            bookingResult?.error?.message || 
-                            bookingResult?.error || 
-                            "Failed to send booking request. Please try again."
-        
-        console.error("❌ Booking failed:", errorMessage)
-        
-        Alert.alert(
-          "Booking Failed",
-          errorMessage,
-          [{ text: "OK" }]
-        )
-        setBookingInProgress(false)
-      }
+      // Update state
+      setStudios(combined);
+      setLoading(false);
+      
+      const totalTime = Date.now() - startTime;
+      console.log(`✅ Fetched ${combined.length} studios in ${totalTime}ms`);
+      
     } catch (error) {
-      console.error("❌ Booking error:", error)
-      Alert.alert(
-        "Booking Error",
-        error.message || "An unexpected error occurred. Please try again.",
-        [{ text: "OK" }]
-      )
-      setBookingInProgress(false)
+      console.error("❌ Error in fetchRecommendations:", error);
+      setError(error.message || "Failed to load recommendations");
+      setLoading(false);
     }
-  }
+  };
 
-  const swipeLeft = () => {
-    // Animate current card out with opacity
-    Animated.parallel([
-      Animated.timing(position, {
-        toValue: { x: -SCREEN_WIDTH - 100, y: 0 },
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(cardOpacity, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      // Advance to next card (this will trigger useEffect to animate new card in)
-      nextCard()
-    })
-  }
-
-  const resetPosition = () => {
-    Animated.parallel([
-      Animated.spring(position, {
-        toValue: { x: 0, y: 0 },
-        friction: 5,
-        tension: 40,
-        useNativeDriver: true,
-      }),
-      Animated.timing(cardOpacity, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start()
-  }
-
-  const nextCard = () => {
-    // Use refs to get the latest values (avoid closure issues)
-    const currentStudios = studiosRef.current
-    const currentIndexValue = currentIndexRef.current
-
-    // Always check against studios (source of truth) for length
-    if (currentStudios.length === 0) {
-      return
-    }
-
-    // Check if we've reached the last card
-    if (currentIndexValue >= currentStudios.length - 1) {
-      // Last card - optionally reload recommendations
-      Alert.alert("No more studios", "Would you like to reload recommendations?", [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Reload",
-          onPress: () => {
-            setCurrentIndex(0)
-            fetchRecommendations()
-          },
-        },
-      ])
-    } else {
-      // Ensure next index is valid
-      const nextIndex = currentIndexValue + 1
-      if (nextIndex < currentStudios.length) {
-        setCurrentIndex(nextIndex)
-      }
-    }
-  }
-
-  const handleTourComplete = () => {
-    // Tour completed
-  }
-
-  const renderBackgroundCards = () => (
-    <View style={[styles.backgroundCardsContainer, { transform: [{ translateY: -CARD_RAISE }] }]}>
-      <View style={[styles.backgroundCard, styles.thirdCard]}>
-        <LinearGradient colors={["#FFFFFF", "#EDCFC9"]} style={styles.backgroundCardInner} />
-      </View>
-      <View style={[styles.backgroundCard, styles.secondCard]}>
-        <LinearGradient colors={["#FFFFFF", "#EDCFC9"]} style={styles.backgroundCardInner} />
-      </View>
-      <View style={[styles.backgroundCard, styles.firstCard]}>
-        <LinearGradient colors={["#FFFFFF", "#EDCFC9"]} style={styles.backgroundCardInner} />
-      </View>
-    </View>
-  )
+  const renderBackgroundCards = () => {
+    return null;
+  };
 
   const renderCard = (studio, index) => {
-    // Don't render cards that have already been swiped
-    if (index < currentIndex) {
-      return null
-    }
-
+    // Determine if this is a private massager
+    const isPrivateMassager = studio?.providerType === "privateMassager";
+    
     // Only render the current card
     if (index !== currentIndex) {
-      return null
+      return null;
     }
 
-    // Get the actual studio data - use source of truth (studios) if studio param is undefined
-    const actualStudio = studio || studios[index] || (translatedStudios.length > 0 && translatedStudios.length === studios.length ? translatedStudios[index] : null)
+    // Get the actual studio data
+    const actualStudio = studio || studios[index] || (translatedStudios.length > 0 && translatedStudios.length === studios.length ? translatedStudios[index] : null);
 
-    // Safety check: ensure studio exists and has required data
+    // Safety check
     if (!actualStudio) {
-      return null
+      return null;
     }
 
-    const combinedTransforms = [...position.getTranslateTransform(), { translateY: -CARD_RAISE }]
-
-    const rotate = position.x.interpolate({
-      inputRange: [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2],
-      outputRange: ["-10deg", "0deg", "10deg"],
-      extrapolate: "clamp",
-    })
-
-    const likeOpacity = position.x.interpolate({
-      inputRange: [0, SWIPE_THRESHOLD],
-      outputRange: [0, 1],
-      extrapolate: "clamp",
-    })
-
-    const nopeOpacity = position.x.interpolate({
-      inputRange: [-SWIPE_THRESHOLD, 0],
-      outputRange: [1, 0],
-      extrapolate: "clamp",
-    })
-
-    const isPrivateMassager = actualStudio.providerType === "privateMassager"
-
-    // For salons: use services; for private massagers: use occupation/gender/other info
-    let displayTags = []
+    // Prepare display tags based on provider type
+    let displayTags = [];
+    
     if (isPrivateMassager) {
-      // Build tags from private massager fields
-      if (actualStudio.gender) displayTags.push(actualStudio.gender)
-      if (actualStudio.occupation) displayTags.push(actualStudio.occupation)
-      if (actualStudio.height) displayTags.push(`${actualStudio.height}cm`)
-      // Ensure at least 3 tags for UI consistency
+      if (actualStudio.gender) displayTags.push(actualStudio.gender);
+      if (actualStudio.occupation) displayTags.push(actualStudio.occupation);
+      if (actualStudio.height) displayTags.push(`${actualStudio.height}cm`);
+      
       while (displayTags.length < 3) {
-        displayTags.push("Massage Therapist")
+        displayTags.push("Massage Therapist");
       }
     } else {
-      // Salon: use services
-      const services = actualStudio.services || []
-      displayTags = [
-        services[0] || "Massage",
-        services[1] || "Therapy",
-        services[2] || "Relaxation"
-      ]
+      const servicesArray = actualStudio.services || actualStudio.typesOfMassages || actualStudio.typesOfMassage || [];
+      displayTags = servicesArray
+        .filter(service => service && typeof service === 'string' && service.trim() !== '')
+        .slice(0, 3);
+      
+      if (displayTags.length === 0) {
+        displayTags = ["Massage", "Therapy", "Relaxation"];
+      }
     }
+
+    const combinedTransforms = [...position.getTranslateTransform(), { translateY: -CARD_RAISE }];
+    const rotate = position.x.interpolate({
+      inputRange: [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2],
+      outputRange: ['-15deg', '0deg', '15deg'],
+      extrapolate: 'clamp'
+    });
 
     return (
       <Animated.View
-        key={`${actualStudio.id}-${currentIndex}`}
+        key={`${actualStudio.id}-${index}`}
         ref={index === currentIndex ? cardRef : null}
         style={[
           styles.cardContainer,
@@ -912,7 +713,6 @@ const Homescreen = ({ navigation }) => {
         {...panResponder.panHandlers}
       >
         <LinearGradient colors={["#FFFFFF", "#EDCFC9"]} style={styles.card}>
-          {/* Swipe indicators */}
           <Animated.View style={[styles.likeIndicator, { opacity: likeOpacity }]}>
             <View style={styles.likeBadge}>
               <Icon name="check" size={moderateScale(28)} color="#4CAF50" />
@@ -921,9 +721,7 @@ const Homescreen = ({ navigation }) => {
           </Animated.View>
 
           <Animated.View style={[styles.nopeIndicator, { opacity: nopeOpacity }]}>
-            <View style={styles.nopeBadge}>
-
-            </View>
+            <View style={styles.nopeBadge} />
           </Animated.View>
 
           <View style={styles.imageContainer}>
@@ -931,25 +729,24 @@ const Homescreen = ({ navigation }) => {
               <Image source={{ uri: actualStudio.imageUrl }} style={styles.studioImage} resizeMode="cover" />
             ) : (
               <View style={styles.imagePlaceholder}>
-                <View style={styles.placeholderContent}>
-
-                </View>
+                <View style={styles.placeholderContent} />
               </View>
             )}
-            {/* Only show rating for salons (private massagers don't have ratings yet) */}
+            
             {!isPrivateMassager && (
               <View style={styles.ratingBadge}>
                 <Icon name="star" size={moderateScale(16)} color="#FDB022" />
                 <Text style={styles.ratingText}>{formatText((actualStudio.rating || 0).toFixed(1))}</Text>
               </View>
             )}
+            
             {actualStudio.isSubscribed && (
               <View style={styles.subscribedBadge}>
                 <Icon name="check-decagram" size={moderateScale(16)} color="#FFFFFF" />
                 <Text style={styles.subscribedText}>Premium</Text>
               </View>
             )}
-            {/* Show provider type badge for private massagers */}
+            
             {isPrivateMassager && (
               <View style={styles.typeBadge}>
                 <Icon name="account" size={moderateScale(14)} color="#FFFFFF" />
@@ -962,8 +759,8 @@ const Homescreen = ({ navigation }) => {
             <Text style={styles.studioName} numberOfLines={1}>
               {actualStudio.name}
             </Text>
+            
             <View style={styles.infoRow}>
-              {/* Only show price for salons */}
               {!isPrivateMassager && (
                 <View style={styles.priceContainer}>
                   <Icon name="currency-usd" size={moderateScale(16)} color="#C97B84" />
@@ -972,7 +769,7 @@ const Homescreen = ({ navigation }) => {
                   </Text>
                 </View>
               )}
-              {/* Show location for salons, or other info for private massagers */}
+              
               {isPrivateMassager ? (
                 <View style={styles.locationContainer}>
                   {actualStudio.height && actualStudio.weight && (
@@ -993,7 +790,7 @@ const Homescreen = ({ navigation }) => {
                 </View>
               )}
             </View>
-            {/* Show aboutMe for private massagers if available */}
+            
             {isPrivateMassager && actualStudio.aboutMe && (
               <View style={styles.aboutMeContainer}>
                 <Text style={styles.aboutMeText} numberOfLines={2}>
@@ -1001,40 +798,40 @@ const Homescreen = ({ navigation }) => {
                 </Text>
               </View>
             )}
+            
             <View style={styles.tagsContainer}>
               <View style={styles.tagsRow}>
-                <View style={styles.tag}>
-                  <Text style={styles.tagText} numberOfLines={1}>
-                    {displayTags[0]}
-                  </Text>
-                </View>
-                <View style={styles.tag}>
-                  <Text style={styles.tagText} numberOfLines={1}>
-                    {displayTags[1]}
-                  </Text>
-                </View>
+                {displayTags.slice(0, 2).map((tag, idx) => (
+                  <View key={`tag-${idx}`} style={styles.tag}>
+                    <Text style={styles.tagText} numberOfLines={1}>
+                      {tag}
+                    </Text>
+                  </View>
+                ))}
               </View>
-              <View style={styles.tagsRow}>
-                <View style={styles.tag}>
-                  <Text style={styles.tagText} numberOfLines={1}>
-                    {displayTags[2]}
-                  </Text>
+              {displayTags[2] && (
+                <View style={styles.tagsRow}>
+                  <View style={styles.tag}>
+                    <Text style={styles.tagText} numberOfLines={1}>
+                      {displayTags[2]}
+                    </Text>
+                  </View>
                 </View>
-              </View>
+              )}
             </View>
           </View>
         </LinearGradient>
       </Animated.View>
-    )
-  }
+    );
+  };
 
   // Use translated studios only if they're fully ready and match the studios length
   // This prevents empty cards when translation is in progress
   const studiosToRender =
     translatedStudios.length > 0 &&
-      translatedStudios.length === studios.length
+    translatedStudios.length === studios.length
       ? translatedStudios
-      : studios
+      : studios;
 
   // Loading state
   if (loading) {
@@ -1054,7 +851,19 @@ const Homescreen = ({ navigation }) => {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#EDE2E0" />
 
-      <AppTourGuide tourSteps={tourSteps} onComplete={handleTourComplete} />
+      <AppTourGuide
+        visible={showTour}
+        onComplete={handleTourComplete}
+        steps={[
+          {
+            title: t('tour.welcome'),
+            description: t('tour.welcomeDesc'),
+            target: 'welcome',
+            overlay: true,
+          },
+          // Add more steps as needed
+        ]}
+      />
 
       <View style={styles.header}>
         <View style={styles.userBadge}>
@@ -1064,12 +873,12 @@ const Homescreen = ({ navigation }) => {
           </Text>
         </View>
         <TouchableOpacity
-          ref={notificationButtonRef}
-          style={styles.notificationButton}
-          onPress={() => navigation.navigate("notifications")}
-        >
-          <Icon name="bell-outline" size={moderateScale(22)} color="#D96073" />
-        </TouchableOpacity>
+  ref={notificationButtonRef}
+  style={styles.notificationButton}
+  onPress={() => navigation.navigate("notifications")}
+>
+  <Text style={{ fontSize: moderateScale(22), color: "#D96073" }}>🔔</Text>
+</TouchableOpacity>
       </View>
 
       {showNotification && notificationType === "booking" && (
@@ -1139,8 +948,8 @@ const Homescreen = ({ navigation }) => {
 
       <BottomNav navigation={navigation} active="home" bottomOffset={moderateScale(12)} />
     </View>
-  )
-}
+  );
+};
 
 /**
  * Send booking request for a studio or private massager.
@@ -1313,7 +1122,7 @@ const sendBookingRequest = async (studio) => {
       body: JSON.stringify(bookingData),
     })
 
-    console.log("📥 Booking response status:", bookingResponse.status)
+    console.log("📥 Booking response status:", bookingResponse.status);
 
     if (bookingResponse.ok) {
       const result = await bookingResponse.json()

@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "thaimassageapp",
-    "displayName": "Thai Massage",
+    "name": "Luci",
+    "displayName": "Luci",
     "slug": "thaimassageapp",
     "owner": "luci.xyz",
     "scheme": "thaimassageapp",
@@ -25,7 +25,13 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.luci.thaimassageapp"
+      "package": "com.thaimassageapp",
+      "versionCode": 2,
+      "googleServicesFile": "./google-services.json",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -34,6 +40,15 @@
       "eas": {
         "projectId": "c55ce08a-756a-4762-9540-3e8dbdd4c128"
       }
-    }
+    },
+    "plugins": [
+      "@react-native-firebase/app",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Luci to use your location to find nearby massage salons."
+        }
+      ]
+    ]
   }
 }
